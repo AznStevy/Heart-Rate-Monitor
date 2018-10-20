@@ -1,1 +1,6 @@
+os
+json
+numpy
+scipy
+matplotlib
 pytest
