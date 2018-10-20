@@ -141,12 +141,12 @@ class FileHandler(object):
 
     def write_data(self, json_object, filename):
         """
-        Writes json object to specified filename
+        Writes json object to specified filename.
         Args:
             json_object: dictionary object with data
             filename: name of file to save to
         """
-        if isinstance(json_object, dict):
+        if type(json_object) is dict:
             with open(filename, 'w') as outfile:
                 json.dump(json_object, outfile)
         else:
