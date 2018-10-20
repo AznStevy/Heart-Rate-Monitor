@@ -78,6 +78,9 @@ class FileHandler(object):
 
         exists = os.path.isfile(filename)
         if exists:
+            if self.get_ext(filename) != ".csv":
+                raise TypeError("Incorrect file type.")
+
             verified_data = self._verify_data(filename)
             self.time = verified_data[:, 0]
             self.signal = verified_data[:, 1]

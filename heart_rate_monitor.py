@@ -9,7 +9,8 @@ class HeartRateMonitor(object):
         self.time = self.file_handler.time
         self.raw_signal = self.file_handler.signal
         self.analyzer = analyzer(self.time, self.raw_signal,
-                                 name='{}'.format(self.file_handler.filename))
+                                 name='{}'.format(self.file_handler.filename),
+                                 thresh_frac=0.5)
         self.analyzer.start_analysis()
 
     def to_json(self):
@@ -38,13 +39,13 @@ class HeartRateMonitor(object):
 
 if __name__ == "__main__":
     # 8, 9 (Wellens disease/inverse signal), 12, 15, 24 (weird signal),
-    for i in range(1):
+    for i in range(10):
         num = i + 1
         heart_rate_monitor = HeartRateMonitor(
             filename="tests/test_data/test_data{}.csv".format(num),
-            analyzer=Threshold)
+            analyzer=Wavelet)
 
         metrics = heart_rate_monitor.to_json()
         heart_rate_monitor.analyzer.plot_graph()
         heart_rate_monitor.write_json()
-        print(num, metrics["mean_hr_bpm"], metrics["num_beats"])
+        print(num, metrics["mean_hr_bpm"], metrics["beats"])

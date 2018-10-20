@@ -33,7 +33,7 @@ def test_get_ext(filename, expected):
 def _get_test_data_files():
     files = []
     for i in range(31):
-        filename = "tests/test_data/test_data{}.csv".format(i+1)
+        filename = "tests/test_data/test_data{}.csv".format(i + 1)
         files.append(filename)
     return files
 
@@ -51,6 +51,7 @@ def test_read_bad_data(filename):
     time, signal = ecg_file.read_data()
     assert len(time) == len(signal)
 
+
 @pytest.mark.parametrize("filename", [
     ("tests/thisdoesntexist.csv"),
     ("tests/test1.dat")])
@@ -59,6 +60,12 @@ def test_read_data_no_file(filename):
     with pytest.raises(FileNotFoundError):
         _, _ = ecg_file.read_data()
 
+@pytest.mark.parametrize("filename", [
+    ("tests/test_data/test_data1.html")])
+def test_read_data_bad_ext(filename):
+    ecg_file = FileHandler(filename, initialize=False)
+    with pytest.raises(TypeError):
+        _, _ = ecg_file.read_data()
 
 @pytest.mark.parametrize("data", [
     ({}),

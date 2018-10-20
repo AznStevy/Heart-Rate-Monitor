@@ -1,6 +1,7 @@
 from filtered_signal import FilteredSignal
 
 import numpy as np
+import scipy.signal as sp
 from abc import abstractmethod
 import matplotlib.pyplot as plt
 
@@ -12,11 +13,11 @@ class ECGDetectionAlgorithm(object):
         self.raw_signal = signal
 
         # define properties
-        self.beats = []
-        self.duration = 0
-        self.num_beats = 0
-        self.mean_hr_bpm = 0
-        self.voltage_extremes = (0, 0)
+        self.beats = None
+        self.duration = None
+        self.num_beats = None
+        self.mean_hr_bpm = None
+        self.voltage_extremes = None
 
     def start_analysis(self):
         """
@@ -64,7 +65,7 @@ class ECGDetectionAlgorithm(object):
         Returns: number of beats
 
         """
-        if not self.beats:
+        if self.beats is None:
             self.find_beats()
         return len(self.beats)
 
@@ -74,9 +75,9 @@ class ECGDetectionAlgorithm(object):
         Returns: mean heartrate bpm.
 
         """
-        if not self.duration:
+        if self.duration is None:
             self.duration = self.find_duration()
-        if not self.beats:
+        if self.beats is None:
             self.beats = self.find_beats()
 
         bpm = float(len(self.beats) / float(self.duration / 60))
@@ -93,7 +94,7 @@ class ECGDetectionAlgorithm(object):
 
 class Threshold(ECGDetectionAlgorithm):
     def __init__(self, time, signal, **kwargs):
-        super().__init__(time, signal)
+        super().__init__(time, signal, **kwargs)
         self.high_cutoff = kwargs.get('high_cutoff', 1)
         self.low_cutoff = kwargs.get('low_cutoff', 30)
 
@@ -111,6 +112,7 @@ class Threshold(ECGDetectionAlgorithm):
         self.binary_centers = None
         self.rising_edges = None
         self.falling_edges = None
+        self.signal_period = None
 
     def find_beats(self):
         """
@@ -118,7 +120,7 @@ class Threshold(ECGDetectionAlgorithm):
         Returns: Times at which the beats occur.
 
         """
-        self.binary_signal = self._apply_threshold(
+        self.binary_signal = self.apply_threshold(
             self.filtered_signal, self.background)
         self.binary_centers = self._find_binary_centers(self.binary_signal)
         # find the indices where it equals 1
@@ -126,7 +128,7 @@ class Threshold(ECGDetectionAlgorithm):
         beat_time_list = np.take(self.time, tuple(beat_ind))
         return beat_time_list.tolist()
 
-    def _apply_threshold(self, signal, background):
+    def apply_threshold(self, signal, background=None, abs_signal=False):
         """
         Applies a threshold of a certain percentage.
         Args:
@@ -136,10 +138,12 @@ class Threshold(ECGDetectionAlgorithm):
 
         """
         self.threshold = self._find_threshold(signal, background)
-        bin_sig = abs(signal) >= self.threshold
+        if abs_signal:
+            signal = abs(signal)
+        bin_sig = signal >= self.threshold
         return bin_sig
 
-    def _find_threshold(self, signal, background, filter_bg: bool = True):
+    def _find_threshold(self, signal, background=None, filter_bg: bool = True):
         """
         Determines threshold based on a absolute-value-filtered/zeroed signal and proportion.
         Threshold is padded by one period.
@@ -151,22 +155,25 @@ class Threshold(ECGDetectionAlgorithm):
         Returns: Threshold array
 
         """
-        if filter_bg:
+        if filter_bg and background is not None:
             background = self.filtered_signal_obj.apply_noise_reduction(
                 background, self.low_cutoff + 10, max(0, self.high_cutoff - 5))
 
         padding = self.filtered_signal_obj.period
         start_ind = padding
-        end_ind = len(background) - padding
+        end_ind = len(self.filtered_signal) - padding
         padded_signal = signal[start_ind:end_ind]
         min_v, max_v = self._find_voltage_extremes(padded_signal)
 
         # determine if spikes tend to be positive or negative
         threshold_array = []
         threshold_value = self.threshold_frac * max(abs(max_v), abs(min_v))
-        for bg_val in background:
-            threshold_array.append(threshold_value - abs(bg_val))
-            # threshold_array.append(threshold_value)
+
+        if background is None:
+            threshold_array = np.ones(len(self.filtered_signal)) * threshold_value
+        else:
+            for bg_val in background:
+                threshold_array.append(threshold_value - abs(bg_val))
 
         return threshold_array
 
@@ -336,10 +343,9 @@ class Threshold(ECGDetectionAlgorithm):
         """
         return np.array_equal(signal, signal.astype(bool))
 
-
 class Convolution(Threshold):
-    def __init__(self, time, signal):
-        super().__init__(time, signal)
+    def __init__(self, time, signal, **kwargs):
+        super().__init__(time, signal, **kwargs)
 
     def find_beats(self):
         """
@@ -348,14 +354,60 @@ class Convolution(Threshold):
         """
         pass
 
+    def _find_signal_period(self):
+        pass
 
-class Wavelet(ECGDetectionAlgorithm):
-    def __init__(self, time, signal):
-        super().__init__(time, signal)
+
+class Wavelet(Threshold):
+    def __init__(self, time, signal, **kwargs):
+        super().__init__(time, signal, **kwargs)
+
+        self.signal_cwt = None
 
     def find_beats(self):
         """
         Finds the beats from the signal using a continuous wavelet transform.
         Returns: Times at which the beats occur.
         """
-        pass
+        print("Using OVERWRITTEN find_beats!")
+
+        self.signal_cwt = self._wavelet_transform()
+        self.binary_signal = self.apply_threshold(self.signal_cwt, self.signal_cwt)
+        self.binary_centers = self._find_binary_centers(self.binary_signal)
+        # find the indices where it equals 1
+        beat_ind = self._find_indices(self.binary_centers, lambda x: x == 1)
+        beat_time_list = np.take(self.time, tuple(beat_ind))
+        return beat_time_list.tolist()
+
+    def _wavelet_transform(self):
+        # limit to the average detected period the signal
+        self.widths_cwt = np.arange(1, 10)
+        self.signal_cwt_img = sp.cwt(self.raw_signal, sp.ricker, self.widths_cwt)
+        return np.average(self.signal_cwt_img, axis=0)
+
+    def plot_graph(self):
+        fig = plt.figure(figsize=(10, 6))
+        plt.title("{}".format(self.name))
+        plt.rcParams['text.antialiased'] = True
+        plt.style.use('ggplot')
+        ax1 = fig.add_subplot(211)
+        ax1.grid(True)
+        ax1.set_xlim([min(self.time), max(self.time)])
+        ax1.plot(self.time, self.raw_signal,
+                 label='Raw Signal', linewidth=1, antialiased=True)
+        ax1.plot(self.time, self.threshold,
+                 label='Threshold', linewidth=1, antialiased=True)
+        ax1.plot(self.time, self.signal_cwt,
+                 label='Averaged Wavelet Transform', linewidth=1, antialiased=True)
+        _, max_val = self._find_voltage_extremes(self.filtered_signal)
+        ax1.plot(self.time, self.binary_signal * max_val,
+                 label='Binary Signal', linewidth=5, antialiased=True)
+        ax1.plot(self.time, self.binary_centers * max_val,
+                 label='Binary Centers', linewidth=5, antialiased=True)
+        ax1.legend(loc='best')
+
+        ax2 = fig.add_subplot(212)
+        ax2.imshow(self.signal_cwt_img, cmap='magma', aspect='auto',
+                   vmax=abs(self.signal_cwt).max(), vmin=-abs(self.signal_cwt).max())
+        plt.show()
+        plt.close()
