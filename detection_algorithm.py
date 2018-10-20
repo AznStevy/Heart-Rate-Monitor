@@ -94,7 +94,7 @@ class ECGDetectionAlgorithm(object):
 class Threshold(ECGDetectionAlgorithm):
     def __init__(self, time, signal, **kwargs):
         super().__init__(time, signal)
-        self.high_cutoff = kwargs.get('high_cutoff', 2)
+        self.high_cutoff = kwargs.get('high_cutoff', 1)
         self.low_cutoff = kwargs.get('low_cutoff', 30)
 
         self.filtered_signal_obj = FilteredSignal(
@@ -105,7 +105,8 @@ class Threshold(ECGDetectionAlgorithm):
         self.fs = self.filtered_signal_obj.fs
 
         # processing parameters
-        self.threshold = 0
+        self.threshold_frac = kwargs.get('threshold_frac', 1)
+        self.threshold = None
         self.binary_signal = None
         self.binary_centers = None
         self.rising_edges = None
@@ -134,18 +135,18 @@ class Threshold(ECGDetectionAlgorithm):
         Returns: list of binary values
 
         """
-        self.threshold, neg_spikes = self._find_threshold(signal, background)
-        bin_sig = abs(signal) > self.threshold
+        self.threshold = self._find_threshold(signal, background)
+        bin_sig = abs(signal) >= self.threshold
         return bin_sig
 
-    def _find_threshold(self, signal, background, frac: float = 1, filter_bg: bool = True):
+    def _find_threshold(self, signal, background, filter_bg: bool = True):
         """
-        Determines threshold based on a filtered/zeroed signal and proportion
+        Determines threshold based on a absolute-value-filtered/zeroed signal and proportion.
+        Threshold is padded by one period.
         Args:
             filter_bg (bool): Whether or not to filter the background.
             background (object): background for the signal
             signal: heart beat signal
-            frac (float): threshold percentage
 
         Returns: Threshold array
 
@@ -160,19 +161,21 @@ class Threshold(ECGDetectionAlgorithm):
         padded_signal = signal[start_ind:end_ind]
         min_v, max_v = self._find_voltage_extremes(padded_signal)
 
-        neg_spikes = False
-        if abs(min_v) > max_v:
-            neg_spikes = True
-
         # determine if spikes tend to be positive or negative
         threshold_array = []
-        threshold_value = frac * max(abs(max_v), abs(min_v))
+        threshold_value = self.threshold_frac * max(abs(max_v), abs(min_v))
         for bg_val in background:
             threshold_array.append(threshold_value - abs(bg_val))
+            # threshold_array.append(threshold_value)
 
-        return threshold_array, neg_spikes
+        return threshold_array
 
-    def plot_graph(self, file_path="graph.png"):
+    def plot_graph(self, file_path=None):
+        """
+        Plots a graph of relevant information for the threshold algorithm.
+        Args:
+            file_path: The path of the file to output.
+        """
         fig = plt.figure(figsize=(10, 6))
         plt.title("{}".format(self.name))
         plt.rcParams['text.antialiased'] = True
@@ -205,7 +208,8 @@ class Threshold(ECGDetectionAlgorithm):
         ax2.set_ylabel('|Y(freq)|')
         ax2.legend(loc='best')
         fig.tight_layout()
-        fig.savefig(file_path)
+        if file_path:
+            fig.savefig(file_path)
         plt.show()
         plt.close()
 
@@ -221,11 +225,12 @@ class Threshold(ECGDetectionAlgorithm):
         """
         return [i for (i, val) in enumerate(values) if func(val)]
 
-    def _find_binary_centers(self, bin_signal):
+    def _find_binary_centers(self, bin_signal, min_width=1):
         # first make sure that this is a binary signal
         """
         Finds the centers of the thresholded binary signal.
         Args:
+            min_width (int): Minimum width for binary signal.
             bin_signal: binary signal
 
         Returns: list of binary values representing the centers of the binary steps.
@@ -237,11 +242,18 @@ class Threshold(ECGDetectionAlgorithm):
 
         self.rising_edges = self._find_rising_edges(bin_signal)
         self.falling_edges = self._find_falling_edges(bin_signal)
+
+        # puts falling edge at end if there's a incomplete peak at end (test_data1)
+        if len(self.rising_edges) > len(self.falling_edges):
+            temp_falling_edges = self.falling_edges.tolist()
+            temp_falling_edges.append(len(bin_signal))
+            self.falling_edges = np.array(temp_falling_edges)
+
         max_len = min(len(self.rising_edges), len(self.falling_edges))
 
         centers = []  # gets the centers only
         for i in range(max_len):
-            if (self.falling_edges[i] - self.rising_edges[i]) >= 2:
+            if (self.falling_edges[i] - self.rising_edges[i]) >= min_width:
                 centers.append(round((self.rising_edges[i] + self.falling_edges[i]) / 2))
 
         # generate actual binary for centers
@@ -336,6 +348,14 @@ class Convolution(Threshold):
         """
         pass
 
+
 class Wavelet(ECGDetectionAlgorithm):
     def __init__(self, time, signal):
+        super().__init__(time, signal)
+
+    def find_beats(self):
+        """
+        Finds the beats from the signal using a continuous wavelet transform.
+        Returns: Times at which the beats occur.
+        """
         pass

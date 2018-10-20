@@ -9,7 +9,7 @@ class FilteredSignal(object):
         self.time = time
         self.raw_signal = signal
         # http://www.ems12lead.com/wp-content/uploads/sites/42/2014/03/ecg-component-frequencies.jpg
-        self.high_pass_cutoff = kwargs.get('high_pass_cutoff', 2)
+        self.high_pass_cutoff = kwargs.get('high_pass_cutoff', 1)
         self.low_pass_cutoff = kwargs.get('low_pass_cutoff', 30)
 
         # other attributes
