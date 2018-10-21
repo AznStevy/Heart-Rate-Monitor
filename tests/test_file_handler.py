@@ -60,12 +60,14 @@ def test_read_data_no_file(filename):
     with pytest.raises(FileNotFoundError):
         _, _ = ecg_file.read_data()
 
+
 @pytest.mark.parametrize("filename", [
     ("tests/test_data/test_data1.html")])
 def test_read_data_bad_ext(filename):
     ecg_file = FileHandler(filename, initialize=False)
     with pytest.raises(TypeError):
         _, _ = ecg_file.read_data()
+
 
 @pytest.mark.parametrize("data", [
     ({}),
