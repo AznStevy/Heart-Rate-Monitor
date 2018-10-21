@@ -5,12 +5,12 @@ import scipy.stats as stats
 
 class FilteredSignal(object):
     def __init__(self, time, signal, **kwargs):
-        if type(time) != list and type(time) != np.ndarray:
-            raise TypeError("time must be numpy.array.")
-        self.time = np.array(time)
-        if type(signal) != list and type(signal) != np.ndarray:
-            raise TypeError("signal must be numpy.array.")
-        self.raw_signal = np.array(signal)
+        # honestly, raising these in here seems really clunky,
+        # but idk if there's any other way...
+        self.time = self._check_list_input(time)
+        self.raw_signal = self._check_list_input(signal)
+        if len(self.time) != len(self.raw_signal):
+            raise ValueError("time and signal array lengths much match.")
 
         # http://www.ems12lead.com/wp-content/uploads/sites/42/2014/03/ecg-component-frequencies.jpg
         self.high_pass_cutoff = kwargs.get('high_pass_cutoff', 1)
@@ -19,15 +19,37 @@ class FilteredSignal(object):
         self.low_pass_cutoff = kwargs.get('low_pass_cutoff', 30)
         if type(self.low_pass_cutoff) != int:
             raise TypeError("low_pass_cutoff must be type int.")
+        if self.low_pass_cutoff <= self.high_pass_cutoff:
+            raise ValueError("high_pass_cutoff must be less than low_pass_cutoff.")
+
         filter_sig = kwargs.get('filter', True)
         if type(filter_sig) != bool:
             raise TypeError("filter_sig must be type bool.")
 
-        # other attributes
+        # other class attributes
         self.period = 0  # for moving average
         self.bg_sub_signal = None
         self.fs = self._determine_frequency(self.time)
         self.filtered_signal = self.clean_signal(filter_sig=filter_sig)
+
+    def _check_list_input(self, test_list):
+        """
+        Checks if all elements are valid.
+        Args:
+            test_list: list to check
+
+        Returns:
+            numpy.ndarray: original list.
+
+        """
+        if type(test_list) != list and type(test_list) != np.ndarray:
+            raise TypeError("Must be numpy.array.")
+        # see if anything is not numeric
+        """
+        if not self._is_integer(test_list).all():
+            raise ValueError("All elements must be numeric.")"""
+
+        return np.array(test_list)
 
     def clean_signal(self, filter_sig: bool = True):
         """
@@ -52,7 +74,7 @@ class FilteredSignal(object):
         Applies a moving average filter and subtracts it from the signal.
 
         Args:
-            signal: Signal to apply moving average background subtraction to.
+            signal: Signal to apply moving average background subtraction.
         """
         if type(signal) != list and type(signal) != np.ndarray:
             raise TypeError("signal must be numpy.array.")

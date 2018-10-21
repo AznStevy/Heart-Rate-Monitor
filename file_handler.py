@@ -15,7 +15,7 @@ class FileHandler(object):
         if initialize:
             self.read_data()
 
-    def get_folder_path(self, filename=None):
+    def get_folder_path(self, filename: str = None) -> object:
         """
         Gets file path without file from project root directory.
         Args:
@@ -31,9 +31,9 @@ class FileHandler(object):
 
         current_directory = os.getcwd()
         folder_path = os.path.dirname(os.path.abspath(filename))
-        return folder_path.replace(current_directory,"").replace("\\","/")
+        return folder_path.replace(current_directory, "").replace("\\", "/")
 
-    def get_basename(self, filename=None):
+    def get_basename(self, filename: str = None):
         """
         Gets filename without extension.
         Args:
@@ -50,7 +50,7 @@ class FileHandler(object):
         base = os.path.basename(filename)
         return str(os.path.splitext(base)[0])
 
-    def get_ext(self, filename=None):
+    def get_ext(self, filename: str = None):
         """
         Gets file extension
         Args:
@@ -67,9 +67,12 @@ class FileHandler(object):
         _, file_extension = os.path.splitext(filename)
         return file_extension
 
-    def read_data(self, filename=None):
+    def read_data(self, filename: str = None):
         """
         Reads in data from specified file.
+
+        Args:
+            filename: File to read from
         """
         if not filename and not self.filename:
             raise FileNotFoundError("No file provided.")
