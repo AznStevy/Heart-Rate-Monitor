@@ -1,5 +1,6 @@
+import logging
 from file_handler import FileHandler
-from detection_algorithm import Threshold, Convolution, Wavelet
+from detection_algorithm import ECGDetectionAlgorithm, Threshold, Convolution, Wavelet
 
 
 class HeartRateMonitor(object):
@@ -8,9 +9,11 @@ class HeartRateMonitor(object):
         self.file_handler = FileHandler(filename)
         self.time = self.file_handler.time
         self.raw_signal = self.file_handler.signal
+
+        if isinstance(analyzer, ECGDetectionAlgorithm):
+            raise TypeError("Analyzer must be type ECGDetectionAlgorithm.")
         self.analyzer = analyzer(self.time, self.raw_signal,
-                                 name='{}'.format(self.file_handler.filename),
-                                 thresh_frac=0.5)
+                                 name='{}'.format(self.file_handler.filename))
         self.analyzer.start_analysis()
 
     def to_json(self):
@@ -38,8 +41,8 @@ class HeartRateMonitor(object):
 
 
 if __name__ == "__main__":
-    # 8, 9 (Wellens disease/inverse signal), 12, 15, 24 (weird signal),
-    for i in range(10):
+    # 8, 9 (Wellens disease/inverse signal), 12, 15, 16, 24 (weird signal),
+    for i in range(8, 10):
         num = i + 1
         heart_rate_monitor = HeartRateMonitor(
             filename="tests/test_data/test_data{}.csv".format(num),
