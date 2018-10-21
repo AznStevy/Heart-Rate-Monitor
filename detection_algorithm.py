@@ -9,8 +9,12 @@ import matplotlib.pyplot as plt
 class ECGDetectionAlgorithm(object):
     def __init__(self, time, signal, **kwargs):
         self.name = kwargs.get('name', "None")
-        self.time = time
-        self.raw_signal = signal
+        if type(time) != list and type(time) != np.ndarray:
+            raise TypeError("time must be numpy.ndarray.")
+        self.time = np.array(time)
+        if type(signal) != list and type(signal) != np.ndarray:
+            raise TypeError("signal must be numpy.ndarray.")
+        self.raw_signal = np.array(signal)
 
         # define properties
         self.beats = None
@@ -94,9 +98,21 @@ class ECGDetectionAlgorithm(object):
 
 class Threshold(ECGDetectionAlgorithm):
     def __init__(self, time, signal, **kwargs):
+        # confirms they are good inputs
         super().__init__(time, signal, **kwargs)
-        self.high_cutoff = kwargs.get('high_cutoff', 1)
-        self.low_cutoff = kwargs.get('low_cutoff', 30)
+
+        self.high_cutoff = kwargs.get('high_pass_cutoff', 1)
+        if type(self.high_cutoff) != int:
+            raise TypeError("high_cutoff must be type int.")
+        self.low_cutoff = kwargs.get('low_pass_cutoff', 30)
+        if type(self.low_cutoff) != int:
+            raise TypeError("low_cutoff must be type int.")
+
+        self.threshold_frac = kwargs.get('threshold_frac', 1)
+        if type(self.threshold_frac) != float and type(self.threshold_frac) != int:
+            raise TypeError("threshold_frac must be type int.")
+        elif self.threshold_frac > 1 or self.threshold_frac < 0:
+            raise ValueError("threshold_frac must be between [0,1].")
 
         self.filtered_signal_obj = FilteredSignal(
             time=self.time, signal=self.raw_signal,
@@ -106,7 +122,6 @@ class Threshold(ECGDetectionAlgorithm):
         self.fs = self.filtered_signal_obj.fs
 
         # processing parameters
-        self.threshold_frac = kwargs.get('threshold_frac', 1)
         self.threshold = None
         self.binary_signal = None
         self.binary_centers = None
@@ -132,15 +147,21 @@ class Threshold(ECGDetectionAlgorithm):
         """
         Applies a threshold of a certain percentage.
         Args:
+            background: Supply a background signal to consider.
+            abs_signal: Whether or not to threshold with absolute values.
             signal: Filtered signal in numpy array
 
-        Returns: list of binary values
+        Returns: list of binary values.
 
         """
-        self.threshold = self._find_threshold(signal, background)
+        self.threshold, is_negative = self._find_threshold(signal, background)
         if abs_signal:
             signal = abs(signal)
-        bin_sig = signal >= self.threshold
+
+        if is_negative:
+            bin_sig = signal <= self.threshold
+        else:
+            bin_sig = signal >= self.threshold
         return bin_sig
 
     def _find_threshold(self, signal, background=None, filter_bg: bool = True):
@@ -165,19 +186,40 @@ class Threshold(ECGDetectionAlgorithm):
         padded_signal = signal[start_ind:end_ind]
         min_v, max_v = self._find_voltage_extremes(padded_signal)
 
+        if abs(min_v) > abs(max_v):
+            is_negative = True
+            threshold_value = min_v * self.threshold_frac
+        else:
+            is_negative = False
+            threshold_value = max_v * self.threshold_frac
+
         # determine if spikes tend to be positive or negative
         threshold_array = []
-        threshold_value = self.threshold_frac * max(abs(max_v), abs(min_v))
-
         if background is None:
             threshold_array = np.ones(len(self.filtered_signal)) * threshold_value
         else:
             for bg_val in background:
-                threshold_array.append(threshold_value - abs(bg_val))
+                threshold_array.append(threshold_value - bg_val)
 
-        return threshold_array
+        return threshold_array, is_negative
 
-    def plot_graph(self, file_path=None):
+    def _find_num_pm(self, signal):
+        """
+        Finds the number of values above and below axis.
+        Args:
+            signal: Signal in question.
+            num: Number to use as the baseline.
+
+        Returns:
+
+        """
+        signal = np.array(signal)
+        # strictly above or below 0
+        pos = signal[np.where(signal > 0)]
+        neg = signal[np.where(signal < 0)]
+        return len(pos), len(neg)
+
+    def plot_graph(self, file_path: str = None):
         """
         Plots a graph of relevant information for the threshold algorithm.
         Args:
@@ -278,7 +320,8 @@ class Threshold(ECGDetectionAlgorithm):
         Args:
             bin_signal: binary signal
 
-        Returns: list of binary values representing the rising edge
+        Returns:
+            numpy.array: list of binary values representing the rising edge
 
         """
         is_binary = self._confirm_binary(bin_signal)
@@ -309,7 +352,8 @@ class Threshold(ECGDetectionAlgorithm):
         Args:
             bin_signal: binary signal
 
-        Returns: list of binary values representing the rising edge
+        Returns:
+            numpy.array: list of binary values representing the rising edge
 
         """
         is_binary = self._confirm_binary(bin_signal)
@@ -343,6 +387,7 @@ class Threshold(ECGDetectionAlgorithm):
         """
         return np.array_equal(signal, signal.astype(bool))
 
+
 class Convolution(Threshold):
     def __init__(self, time, signal, **kwargs):
         super().__init__(time, signal, **kwargs)
@@ -363,13 +408,14 @@ class Wavelet(Threshold):
         super().__init__(time, signal, **kwargs)
 
         self.signal_cwt = None
+        self.threshold_frac = kwargs.get('threshold_frac', .5)
 
     def find_beats(self):
         """
         Finds the beats from the signal using a continuous wavelet transform.
         Returns: Times at which the beats occur.
         """
-        print("Using OVERWRITTEN find_beats!")
+        # print("Using OVERWRITTEN find_beats!")
 
         self.signal_cwt = self._wavelet_transform()
         self.binary_signal = self.apply_threshold(self.signal_cwt, self.signal_cwt)
@@ -381,11 +427,17 @@ class Wavelet(Threshold):
 
     def _wavelet_transform(self):
         # limit to the average detected period the signal
-        self.widths_cwt = np.arange(1, 10)
+        self.widths_cwt = np.arange(1, 6)
         self.signal_cwt_img = sp.cwt(self.raw_signal, sp.ricker, self.widths_cwt)
         return np.average(self.signal_cwt_img, axis=0)
 
-    def plot_graph(self):
+    def plot_graph(self, file_path: str = None):
+        """
+        Plots a graph of relevant information for the threshold algorithm.
+        Args:
+            file_path: The path of the file to output.
+        """
+
         fig = plt.figure(figsize=(10, 6))
         plt.title("{}".format(self.name))
         plt.rcParams['text.antialiased'] = True
