@@ -121,13 +121,15 @@ class FilteredSignal(object):
         else:
             return self.bg_sub_signal
 
-    def apply_moving_average_sub(self, signal):
+    def apply_moving_average_sub(self, signal=None):
         """
         Applies a moving average filter and subtracts it from the signal.
 
         Args:
             signal: Signal to apply moving average background subtraction.
         """
+        if signal is None:
+            signal = self.raw_signal
         if type(signal) != list and type(signal) != np.ndarray:
             raise TypeError("signal must be numpy.array.")
         if not self._is_numeric_list(signal):
@@ -157,6 +159,8 @@ class FilteredSignal(object):
         Returns:
             numpy.array: Background subtracted and filtered signal.
         """
+        if signal is None:
+            signal = self.raw_signal
         if type(signal) != list and type(signal) != np.ndarray:
             raise TypeError("signal must be numpy.array.")
         signal = np.array(signal)
@@ -171,7 +175,7 @@ class FilteredSignal(object):
         try:
             low_passed = self.apply_low_pass(signal, low_pass_cutoff)
             high_passed = self.apply_high_pass(low_passed, high_pass_cutoff)
-            return high_passed
+            return np.array(high_passed)
         except ValueError as e:
             logging.exception(e)
             return signal
@@ -195,10 +199,16 @@ class FilteredSignal(object):
                 raise ValueError("All elements must be numeric.")
             signal = np.array(signal)
         else:
-            signal = self.signal
+            signal = self.raw_signal
 
         if not high_cutoff:
+            logging.warning("High-pass order not valid. Using order=1.")
             high_cutoff = self.high_pass_cutoff
+        elif high_cutoff < 1:
+            raise ValueError("High-pass cutoff must be >= 1.")
+
+        if order < 1:
+            raise ValueError("High-pass order must be >= 1.")
 
         nyq = 0.5 * self.fs
         high = high_cutoff / nyq
@@ -208,7 +218,7 @@ class FilteredSignal(object):
             raise ValueError("Failed to high-pass filter.")
         return filtered_signal
 
-    def apply_low_pass(self, signal, low_cutoff: int, order: int = 1):
+    def apply_low_pass(self, signal=None, low_cutoff: int = None, order: int = 1):
         """
         Applies a low-pass filter.
         Args:
@@ -226,10 +236,16 @@ class FilteredSignal(object):
                 raise ValueError("All elements must be numeric.")
             signal = np.array(signal)
         else:
-            signal = self.signal
+            signal = self.raw_signal
 
         if not low_cutoff:
+            logging.warning("Low-pass order not valid. Using order=1.")
             low_cutoff = self.high_pass_cutoff
+        elif low_cutoff < 1:
+            raise ValueError("Low-pass cutoff must be >= 1.")
+
+        if order < 1:
+            raise ValueError("Low-pass order must be >= 1.")
 
         nyq = 0.5 * self.fs
         high = low_cutoff / nyq
@@ -273,12 +289,14 @@ class FilteredSignal(object):
         if signal is not None:
             if type(signal) != list and type(signal) != np.ndarray:
                 raise TypeError("signal must be numpy.array.")
-
-        if signal is None:
+        else:
             if not is_filtered:
                 signal = self.raw_signal
             else:
                 signal = self.filtered_signal
+
+        if type(is_filtered) != bool:
+            raise TypeError("is_filtered must be type bool.")
 
         n = len(signal)
         k = np.arange(n)
