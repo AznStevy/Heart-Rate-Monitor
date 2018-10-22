@@ -13,18 +13,14 @@ class ECGDetectionAlgorithm(object):
     def __init__(self, time, signal, **kwargs):
         self.name = kwargs.get('name', "None")
         if type(time) != list and type(time) != np.ndarray:
-            logging.warning("time must be numpy.ndarray.")
             raise TypeError("time must be numpy.ndarray.")
         self.time = np.array(time)
         if type(signal) != list and type(signal) != np.ndarray:
-            logging.warning("signal must be numpy.ndarray.")
             raise TypeError("signal must be numpy.ndarray.")
         self.raw_signal = np.array(signal)
         if len(self.raw_signal) == 0 or len(self.time) == 0:
-            logging.warning("signal and time must contain elements.")
             raise ValueError("signal and time must contain elements.")
         if len(self.raw_signal) != len(self.time):
-            logging.warning("signal and time must be same length.")
             raise ValueError("signal and time must be same length.")
 
         # define properties
@@ -68,7 +64,6 @@ class ECGDetectionAlgorithm(object):
 
         """
         if type(signal) != list and type(signal) != np.ndarray:
-            logging.warning("signal must be numpy.ndarray.")
             raise TypeError("signal must be numpy.ndarray.")
 
         signal = np.array(signal)
