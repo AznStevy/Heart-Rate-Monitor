@@ -15,9 +15,11 @@ class HeartRateMonitor(object):
             self.time = self.file_handler.time
             self.raw_signal = self.file_handler.signal
         except TypeError as e:
-            return logging.exception(e)
+            logging.exception(e)
+            return None
         except FileNotFoundError as e:
-            return logging.exception(e)
+            logging.exception(e)
+            return None
 
         if isinstance(analyzer, ECGDetectionAlgorithm):
             raise TypeError("Analyzer must be type ECGDetectionAlgorithm.")
@@ -26,11 +28,11 @@ class HeartRateMonitor(object):
             self.analyzer = analyzer(self.time, self.raw_signal,
                                      name='{}'.format(self.file_handler.filename))
         except TypeError as e:
-            print("Analyzer instantiation failed. Wrong type.")
-            return logging.exception(e)
+            logging.exception(e)
+            return None
         except ValueError as e:
-            print("Analyzer instantiation failed. Bad values.")
-            return logging.exception(e)
+            logging.exception(e)
+            return None
         self.analyzer.start_analysis()
 
     def to_json(self):
@@ -66,18 +68,22 @@ class HeartRateMonitor(object):
 
 def main():
     # 8, 9 (Wellens disease/inverse signal), 12, 15, 16, 24 (weird signal), 29
-    for i in [8]:
+    for i in [22]:
         num = i + 1
         try:
             heart_rate_monitor = HeartRateMonitor(
                 filename="tests/test_data/test_data{}.csv".format(num),
                 analyzer=Wavelet)
-            metrics = heart_rate_monitor.to_json()
-            heart_rate_monitor.analyzer.plot_graph()
-            heart_rate_monitor.write_json()
-            print(num, metrics["mean_hr_bpm"], metrics["beats"])
+
+            if heart_rate_monitor is None:
+                continue
         except TypeError as e:
             logging.exception(e)
+
+        metrics = heart_rate_monitor.to_json()
+        heart_rate_monitor.analyzer.plot_graph()
+        heart_rate_monitor.write_json()
+        print(num, metrics["mean_hr_bpm"], metrics["beats"])
 
 
 if __name__ == "__main__":

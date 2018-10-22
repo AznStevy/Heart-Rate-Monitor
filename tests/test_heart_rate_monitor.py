@@ -1,8 +1,7 @@
 import pytest
-import numpy as np
 
-from file_handler import FileHandler
 from filtered_signal import FilteredSignal
+from detection_algorithm import Threshold, Convolution, Wavelet
 
 
 @pytest.fixture()
@@ -15,6 +14,7 @@ def test_1_data():
                "mean_hr_bpm": 75.60756075607561}
     return metrics
 
+
 @pytest.fixture()
 def test_21_data():
     """This data is very clean/no noise good for testing."""
@@ -22,3 +22,19 @@ def test_21_data():
                "beats": [0.044, 0.794, 1.544, 2.294, 3.044, 3.794, 4.544, 5.294, 6.044, 6.794, 7.544, 8.294, 9.044,
                          9.794, 10.544, 11.294, 12.044, 12.794, 13.544], "mean_hr_bpm": 82.09116439835817}
     return metrics
+
+
+@pytest.fixture()
+def test_variables():
+    rel_info = {
+        "test_1_file": "tests/test_data/test_data1.csv",
+        "test_21_file": "tests/test_data/test_data21.csv"
+    }
+
+
+# --------------- test constructor -------------------
+def test_constructor(test_variables):
+    time_list = test_variables["time"]
+    signal_line = test_variables["line"]
+    _ = FilteredSignal(time_list, signal_line)
+    assert True
