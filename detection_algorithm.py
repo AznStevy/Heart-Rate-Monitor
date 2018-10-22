@@ -1,5 +1,6 @@
 from filtered_signal import FilteredSignal
 
+import logging
 import numpy as np
 import scipy.signal as sp
 from abc import abstractmethod

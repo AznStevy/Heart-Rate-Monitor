@@ -28,7 +28,7 @@ def test_21_filtered_signal_obj():
 
 @pytest.fixture()
 def test_1_filtered_signal_data():
-    """Normal signal, with noise"""
+    """Normal signal, with noise."""
     properties = {'low_pass_cutoff': 30, 'fs': 333.3333333333207, 'high_pass_cutoff': 1, 'period': 100}
     return properties
 
