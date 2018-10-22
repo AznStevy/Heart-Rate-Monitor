@@ -16,7 +16,7 @@ class FileHandler(object):
         if initialize:
             self.read_data()
 
-    def get_folder_path(self, filename: str = None) -> object:
+    def get_folder_path(self, filename: str = None):
         """
         Gets file path without file from project root directory.
         Args:
