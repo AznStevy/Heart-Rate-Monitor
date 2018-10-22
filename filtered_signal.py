@@ -3,6 +3,8 @@ import numpy as np
 import scipy.signal as sp
 import scipy.stats as stats
 
+logging.basicConfig(filename='heart_rate_monitor.log', level=logging.DEBUG)
+
 
 class FilteredSignal(object):
     def __init__(self, time, signal, **kwargs):
@@ -12,6 +14,8 @@ class FilteredSignal(object):
         self.raw_signal = self._check_list_input(signal)
         if len(self.time) != len(self.raw_signal):
             raise ValueError("time and signal array lengths much match.")
+
+        # --------------- other properties --------------------
 
         # http://www.ems12lead.com/wp-content/uploads/sites/42/2014/03/ecg-component-frequencies.jpg
         self.high_pass_cutoff = kwargs.get('high_pass_cutoff', 1)
@@ -30,6 +34,7 @@ class FilteredSignal(object):
         # other class attributes
         self.period = 0  # for moving average
         self.bg_sub_signal = None
+        # don't need to raise exceptions here because hancled above.
         self.fs = self.determine_frequency(self.time)
         self.filtered_signal = self.clean_signal(filter_sig=filter_sig)
 
@@ -92,12 +97,26 @@ class FilteredSignal(object):
         """
         try:
             self.bg_sub_signal = self.apply_moving_average_sub(self.raw_signal)
-        except ZeroDivisionError:
+        except ZeroDivisionError as e:
+            logging.exception(e)
+            self.bg_sub_signal = self.raw_signal
+        except TypeError as e:
+            logging.exception(e)
+            self.bg_sub_signal = self.raw_signal
+        except ValueError as e:
+            logging.exception(e)
             self.bg_sub_signal = self.raw_signal
 
         if filter_sig:
-            signal_noise_removed = self.apply_noise_reduction(
-                self.bg_sub_signal, self.low_pass_cutoff, self.high_pass_cutoff)
+            try:
+                signal_noise_removed = self.apply_noise_reduction(
+                    self.bg_sub_signal, self.low_pass_cutoff, self.high_pass_cutoff)
+            except TypeError as e:
+                logging.exception(e)
+                return self.bg_sub_signal
+            except ValueError as e:
+                logging.exception(e)
+                return self.bg_sub_signal
             return signal_noise_removed
         else:
             return self.bg_sub_signal
@@ -132,8 +151,8 @@ class FilteredSignal(object):
 
         Args:
             signal: Signal to apply noise reduction to.
-            low_pass_cutoff (int): Low-pass filter cut-off
-            high_pass_cutoff (int): High-pass filter cut-off
+            low_pass_cutoff (int): Low-pass filter cut-off.
+            high_pass_cutoff (int): High-pass filter cut-off.
 
         Returns:
             numpy.array: Background subtracted and filtered signal.
@@ -141,18 +160,21 @@ class FilteredSignal(object):
         if type(signal) != list and type(signal) != np.ndarray:
             raise TypeError("signal must be numpy.array.")
         signal = np.array(signal)
+        if not low_pass_cutoff:
+            low_pass_cutoff = self.low_pass_cutoff
+        if not high_pass_cutoff:
+            high_pass_cutoff = self.high_pass_cutoff
         if low_pass_cutoff <= high_pass_cutoff:
             raise ValueError("low_pass_cutoff must be greater than high_pass_cutoff.")
 
+        # if one fails, they will most likely both fail.
         try:
             low_passed = self.apply_low_pass(signal, low_pass_cutoff)
             high_passed = self.apply_high_pass(low_passed, high_pass_cutoff)
             return high_passed
-        except ValueError:
+        except ValueError as e:
+            logging.exception(e)
             return signal
-
-    def _check_filter_value(self):
-        pass
 
     def apply_high_pass(self, signal=None, high_cutoff: int = None, order: int = 1):
         """
@@ -174,6 +196,9 @@ class FilteredSignal(object):
             signal = np.array(signal)
         else:
             signal = self.signal
+
+        if not high_cutoff:
+            high_cutoff = self.high_pass_cutoff
 
         nyq = 0.5 * self.fs
         high = high_cutoff / nyq
@@ -202,6 +227,9 @@ class FilteredSignal(object):
             signal = np.array(signal)
         else:
             signal = self.signal
+
+        if not low_cutoff:
+            low_cutoff = self.high_pass_cutoff
 
         nyq = 0.5 * self.fs
         high = low_cutoff / nyq

@@ -184,8 +184,11 @@ def test_get_properties_output(test_1_filtered_signal_obj):
 
 # ----------------- check moving_average_sub -------------------------
 
-def test_apply_moving_average_sub():
-    pass
+def test_apply_moving_average_sub(test_1_filtered_signal_obj):
+    """Testing moving average."""
+    assert test_1_filtered_signal_obj.bg_sub_signal is not None
+
+#------------------ NEEDS MORE TESTS HERE ------------------
 
 
 @pytest.mark.parametrize("signal", [
@@ -199,5 +202,12 @@ def test_apply_moving_average_sub_bad_signal_value(test_1_filtered_signal_obj, s
 @pytest.mark.parametrize("signal", [
     ("1", "2", "3")])
 def test_apply_moving_average_sub_bad_signal_type(test_1_filtered_signal_obj, signal):
+    with pytest.raises(TypeError):
+        test_1_filtered_signal_obj.apply_moving_average_sub(signal)
+
+# ---------------- test noise_reduction ----------------------------
+@pytest.mark.parametrize("signal", [
+    ("1", "2", "3")])
+def test_apply_noise_reduction_signal_input(test_1_filtered_signal_obj, signal):
     with pytest.raises(TypeError):
         test_1_filtered_signal_obj.apply_moving_average_sub(signal)

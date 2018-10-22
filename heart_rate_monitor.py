@@ -1,19 +1,36 @@
+import os
 import logging
 from file_handler import FileHandler
 from detection_algorithm import ECGDetectionAlgorithm, Threshold, Convolution, Wavelet
 
+logging.basicConfig(filename='heart_rate_monitor.log', level=logging.DEBUG)
+
 
 class HeartRateMonitor(object):
     def __init__(self, filename, analyzer):
+        logging.info("Heart rate monitor instantiated.")
         filename = filename
-        self.file_handler = FileHandler(filename)
-        self.time = self.file_handler.time
-        self.raw_signal = self.file_handler.signal
+        try:
+            self.file_handler = FileHandler(filename)
+            self.time = self.file_handler.time
+            self.raw_signal = self.file_handler.signal
+        except TypeError as e:
+            return logging.exception(e)
+        except FileNotFoundError as e:
+            return logging.exception(e)
 
         if isinstance(analyzer, ECGDetectionAlgorithm):
             raise TypeError("Analyzer must be type ECGDetectionAlgorithm.")
-        self.analyzer = analyzer(self.time, self.raw_signal,
-                                 name='{}'.format(self.file_handler.filename))
+
+        try:
+            self.analyzer = analyzer(self.time, self.raw_signal,
+                                     name='{}'.format(self.file_handler.filename))
+        except TypeError as e:
+            print("Analyzer instantiation failed. Wrong type.")
+            return logging.exception(e)
+        except ValueError as e:
+            print("Analyzer instantiation failed. Bad values.")
+            return logging.exception(e)
         self.analyzer.start_analysis()
 
     def to_json(self):
@@ -22,6 +39,7 @@ class HeartRateMonitor(object):
         Returns: json object of relevant properties.
 
         """
+        logging.info("to_json called")
         dict_obj = {
             "beats": self.analyzer.beats,
             "duration": self.analyzer.duration,
@@ -35,19 +53,32 @@ class HeartRateMonitor(object):
         """
         Writes json to a file called the same base name with .json extension.
         """
+        logging.info("write_json called")
         metrics = self.to_json()
         filename = "{}.json".format(self.file_handler.basename)
-        self.file_handler.write_data(metrics, filename)
+        try:
+            self.file_handler.write_data(metrics, filename)
+        except TypeError as e:
+            logging.exception(e)
 
-if __name__ == "__main__":
+        logging.info("Wrote json to {}".format(filename))
+
+
+def main():
     # 8, 9 (Wellens disease/inverse signal), 12, 15, 16, 24 (weird signal), 29
     for i in [8]:
         num = i + 1
-        heart_rate_monitor = HeartRateMonitor(
-            filename="tests/test_data/test_data{}.csv".format(num),
-            analyzer=Wavelet)
+        try:
+            heart_rate_monitor = HeartRateMonitor(
+                filename="tests/test_data/test_data{}.csv".format(num),
+                analyzer=Wavelet)
+            metrics = heart_rate_monitor.to_json()
+            heart_rate_monitor.analyzer.plot_graph()
+            heart_rate_monitor.write_json()
+            print(num, metrics["mean_hr_bpm"], metrics["beats"])
+        except TypeError as e:
+            logging.exception(e)
 
-        metrics = heart_rate_monitor.to_json()
-        heart_rate_monitor.analyzer.plot_graph()
-        heart_rate_monitor.write_json()
-        print(num, metrics["mean_hr_bpm"], metrics["beats"])
+
+if __name__ == "__main__":
+    main()

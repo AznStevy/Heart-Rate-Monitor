@@ -3,15 +3,16 @@ import json
 import logging
 import numpy as np
 
+logging.basicConfig(filename='heart_rate_monitor.log', level=logging.DEBUG)
+
 
 class FileHandler(object):
     def __init__(self, filename, **kwargs):
+        self.time = None
+        self.signal = None
         self.filename = filename
         self.basename = self.get_basename()
         self.folder_path = self.get_folder_path()
-        self.time = None
-        self.signal = None
-
         initialize = kwargs.get('initialize', True)
         if initialize:
             self.read_data()
@@ -106,10 +107,10 @@ class FileHandler(object):
             csv_data = np.genfromtxt(filename, delimiter=",")
             csv_data = self._verify_dimensions(csv_data)
             csv_data = self._verify_values(csv_data)
-
-        except ValueError:
-            print("Something wrong with file read.")
+        except ValueError as e:
+            logging.exception(e)
             return None
+
         return csv_data
 
     def _verify_values(self, data):
