@@ -1,3 +1,4 @@
+import logging
 import numpy as np
 import scipy.signal as sp
 import scipy.stats as stats
@@ -29,8 +30,23 @@ class FilteredSignal(object):
         # other class attributes
         self.period = 0  # for moving average
         self.bg_sub_signal = None
-        self.fs = self._determine_frequency(self.time)
+        self.fs = self.determine_frequency(self.time)
         self.filtered_signal = self.clean_signal(filter_sig=filter_sig)
+
+    def get_properties(self):
+        """
+        Gets some signal properties. Nothing directly related to the signal is returned.
+        Returns:
+            dict: properties of the filtered signal.
+
+        """
+        info = {
+            "high_pass_cutoff": self.high_pass_cutoff,
+            "low_pass_cutoff": self.low_pass_cutoff,
+            "period": self.period,
+            "fs": self.fs,
+        }
+        return info
 
     def _check_list_input(self, test_list):
         """
@@ -45,11 +61,24 @@ class FilteredSignal(object):
         if type(test_list) != list and type(test_list) != np.ndarray:
             raise TypeError("Must be numpy.array.")
         # see if anything is not numeric
-        """
-        if not self._is_integer(test_list).all():
-            raise ValueError("All elements must be numeric.")"""
+
+        if not self._is_numeric_list(test_list):
+            raise ValueError("All elements must be numeric.")
 
         return np.array(test_list)
+
+    def _is_numeric_list(self, list):
+        """
+        Tests if the list contains all numeric values.
+        Args:
+            list: list or numpy array.
+
+        Returns:
+            bool: Whether all values are numeric.
+
+        """
+        bool_list = np.isreal(list)
+        return np.all(bool_list)
 
     def clean_signal(self, filter_sig: bool = True):
         """
@@ -61,7 +90,11 @@ class FilteredSignal(object):
         Returns:
             numpy.array: Filtered signal
         """
-        self.bg_sub_signal = self.apply_moving_average_sub(self.raw_signal)
+        try:
+            self.bg_sub_signal = self.apply_moving_average_sub(self.raw_signal)
+        except ZeroDivisionError:
+            self.bg_sub_signal = self.raw_signal
+
         if filter_sig:
             signal_noise_removed = self.apply_noise_reduction(
                 self.bg_sub_signal, self.low_pass_cutoff, self.high_pass_cutoff)
@@ -78,16 +111,22 @@ class FilteredSignal(object):
         """
         if type(signal) != list and type(signal) != np.ndarray:
             raise TypeError("signal must be numpy.array.")
+        if not self._is_numeric_list(signal):
+            raise ValueError("All elements must be numeric.")
 
         signal = np.array(signal)
         self.period = round(len(signal) / 100)
+
+        if self.period < 1:
+            raise ZeroDivisionError("Period was not detected.")
+
         periods = round(len(signal) / self.period)
         weights = np.ones(periods) / periods
         mov_avg = np.convolve(signal, weights, mode='same')
 
         return signal - mov_avg
 
-    def apply_noise_reduction(self, signal, low_pass_cutoff: int, high_pass_cutoff: int):
+    def apply_noise_reduction(self, signal=None, low_pass_cutoff=None, high_pass_cutoff=None):
         """
         Applies a bandpass filter determined by some frequency analysis.
 
@@ -102,18 +141,20 @@ class FilteredSignal(object):
         if type(signal) != list and type(signal) != np.ndarray:
             raise TypeError("signal must be numpy.array.")
         signal = np.array(signal)
-
         if low_pass_cutoff <= high_pass_cutoff:
             raise ValueError("low_pass_cutoff must be greater than high_pass_cutoff.")
 
         try:
-            low_passed = self._apply_low_pass(signal, low_pass_cutoff)
-            high_passed = self._apply_high_pass(low_passed, high_pass_cutoff)
+            low_passed = self.apply_low_pass(signal, low_pass_cutoff)
+            high_passed = self.apply_high_pass(low_passed, high_pass_cutoff)
             return high_passed
         except ValueError:
             return signal
 
-    def _apply_high_pass(self, signal, high_cutoff: int, order: int = 1):
+    def _check_filter_value(self):
+        pass
+
+    def apply_high_pass(self, signal=None, high_cutoff: int = None, order: int = 1):
         """
         Applies a high-pass filter.
         Args:
@@ -124,9 +165,15 @@ class FilteredSignal(object):
         Returns:
             numpy.array: High-passed signal.
         """
-        if type(signal) != list and type(signal) != np.ndarray:
-            raise TypeError("signal must be numpy.array.")
-        signal = np.array(signal)
+
+        if signal is not None:
+            if type(signal) != list and type(signal) != np.ndarray:
+                raise TypeError("signal must be numpy.array.")
+            if not self._is_numeric_list(signal):
+                raise ValueError("All elements must be numeric.")
+            signal = np.array(signal)
+        else:
+            signal = self.signal
 
         nyq = 0.5 * self.fs
         high = high_cutoff / nyq
@@ -136,7 +183,7 @@ class FilteredSignal(object):
             raise ValueError("Failed to high-pass filter.")
         return filtered_signal
 
-    def _apply_low_pass(self, signal, low_cutoff: int, order: int = 1):
+    def apply_low_pass(self, signal, low_cutoff: int, order: int = 1):
         """
         Applies a low-pass filter.
         Args:
@@ -147,9 +194,14 @@ class FilteredSignal(object):
         Returns:
             numpy.array: Low-passed signal.
         """
-        if type(signal) != list and type(signal) != np.ndarray:
-            raise TypeError("signal must be numpy.array.")
-        signal = np.array(signal)
+        if signal is not None:
+            if type(signal) != list and type(signal) != np.ndarray:
+                raise TypeError("signal must be numpy.array.")
+            if not self._is_numeric_list(signal):
+                raise ValueError("All elements must be numeric.")
+            signal = np.array(signal)
+        else:
+            signal = self.signal
 
         nyq = 0.5 * self.fs
         high = low_cutoff / nyq
@@ -159,7 +211,7 @@ class FilteredSignal(object):
             raise ValueError("Failed to low-pass filter.")
         return filtered_signal
 
-    def _determine_frequency(self, time=None):
+    def determine_frequency(self, time=None):
         """
         Determines the frequencies with a time array.
         Args:
@@ -169,12 +221,14 @@ class FilteredSignal(object):
         """
         if time is None:
             time = self.time
-
+        if time.size < 2:
+            raise ValueError("time must have 2> elements.")
         if type(time) != list and type(time) != np.ndarray:
             raise TypeError("time must be numpy.array.")
 
-        time = np.array(time)
+        time = np.array(time)  # ensure numpy
         periods = np.diff(time)
+
         return float(1 / stats.mode(periods, axis=None)[0])
 
     def get_fft(self, signal=None, is_filtered: bool = False):

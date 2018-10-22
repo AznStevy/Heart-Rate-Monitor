@@ -27,11 +27,12 @@ class ECGDetectionAlgorithm(object):
         """
         Begins the analysis to get necessary return parameters
         """
-        self.beats = self.find_beats()
         self.duration = self.find_duration()
+        self.voltage_extremes = self.find_voltage_extremes()
+
+        self.beats = self.find_beats()
         self.num_beats = self.find_num_beats()
         self.mean_hr_bpm = self.find_mean_hr_bpm()
-        self.voltage_extremes = self.find_voltage_extremes()
 
     def find_voltage_extremes(self):
         """
@@ -114,12 +115,14 @@ class Threshold(ECGDetectionAlgorithm):
         elif self.threshold_frac > 1 or self.threshold_frac < 0:
             raise ValueError("threshold_frac must be between [0,1].")
 
+        # this does not need to be here for this class... will iron this out later
         self.filtered_signal_obj = FilteredSignal(
             time=self.time, signal=self.raw_signal,
             high_pass_cutoff=self.high_cutoff, low_pass_cutoff=self.low_cutoff)
         self.filtered_signal = self.filtered_signal_obj.filtered_signal
         self.background = self.filtered_signal_obj.bg_sub_signal
         self.fs = self.filtered_signal_obj.fs
+        print(self.filtered_signal_obj.get_properties())
 
         # processing parameters
         self.threshold = None
@@ -140,13 +143,28 @@ class Threshold(ECGDetectionAlgorithm):
         self.binary_centers = self._find_binary_centers(self.binary_signal)
         # find the indices where it equals 1
         beat_ind = self._find_indices(self.binary_centers, lambda x: x == 1)
+
+        test_bpm = len(beat_ind) / (self.duration / 60)
+        if test_bpm < 40:  # reasonable, but still abnormal bpm
+            binary_signal_rev = self.apply_threshold(
+                self.filtered_signal, self.background, reverse_threshold=True)
+            binary_centers_rev = self._find_binary_centers(binary_signal_rev)
+            beat_ind_rev = self._find_indices(binary_centers_rev, lambda x: x == 1)
+            test_bpm_rev = len(beat_ind_rev) / (self.duration / 60)
+
+            if test_bpm_rev >= 40:
+                self.binary_signal = binary_signal_rev
+                self.binary_centers = binary_centers_rev
+                beat_ind = beat_ind_rev
+
         beat_time_list = np.take(self.time, tuple(beat_ind))
         return beat_time_list.tolist()
 
-    def apply_threshold(self, signal, background=None, abs_signal=False):
+    def apply_threshold(self, signal, background=None, abs_signal=False, reverse_threshold=False):
         """
         Applies a threshold of a certain percentage.
         Args:
+            reverse_threshold: Reverse threshold from what it should be.
             background: Supply a background signal to consider.
             abs_signal: Whether or not to threshold with absolute values.
             signal: Filtered signal in numpy array
@@ -154,7 +172,8 @@ class Threshold(ECGDetectionAlgorithm):
         Returns: list of binary values.
 
         """
-        self.threshold, is_negative = self._find_threshold(signal, background)
+        self.threshold, is_negative = self._find_threshold(signal, background,
+                                                           reverse_threshold=reverse_threshold)
         if abs_signal:
             signal = abs(signal)
 
@@ -164,11 +183,12 @@ class Threshold(ECGDetectionAlgorithm):
             bin_sig = signal >= self.threshold
         return bin_sig
 
-    def _find_threshold(self, signal, background=None, filter_bg: bool = True):
+    def _find_threshold(self, signal, background=None, filter_bg: bool = True, reverse_threshold=False):
         """
         Determines threshold based on a absolute-value-filtered/zeroed signal and proportion.
-        Threshold is padded by one period.
+        Threshold is padded by one period. Note: abs value isn't used because of double/triple counting.
         Args:
+            reverse_threshold (bool): Reverse threshold of what it should be in terms of positive or negative.
             filter_bg (bool): Whether or not to filter the background.
             background (object): background for the signal
             signal: heart beat signal
@@ -186,12 +206,20 @@ class Threshold(ECGDetectionAlgorithm):
         padded_signal = signal[start_ind:end_ind]
         min_v, max_v = self._find_voltage_extremes(padded_signal)
 
-        if abs(min_v) > abs(max_v):
-            is_negative = True
-            threshold_value = min_v * self.threshold_frac
+        if reverse_threshold:
+            if abs(min_v) < abs(max_v):
+                is_negative = True
+                threshold_value = min_v * self.threshold_frac
+            else:
+                is_negative = False
+                threshold_value = max_v * self.threshold_frac
         else:
-            is_negative = False
-            threshold_value = max_v * self.threshold_frac
+            if abs(min_v) > abs(max_v):
+                is_negative = True
+                threshold_value = min_v * self.threshold_frac
+            else:
+                is_negative = False
+                threshold_value = max_v * self.threshold_frac
 
         # determine if spikes tend to be positive or negative
         threshold_array = []
@@ -410,7 +438,7 @@ class Wavelet(Threshold):
         self.signal_cwt = None
         self.threshold_frac = kwargs.get('threshold_frac', .5)
 
-    def find_beats(self):
+    def find_beats(self, reverse_threshold=False):
         """
         Finds the beats from the signal using a continuous wavelet transform.
         Returns: Times at which the beats occur.
@@ -422,6 +450,20 @@ class Wavelet(Threshold):
         self.binary_centers = self._find_binary_centers(self.binary_signal)
         # find the indices where it equals 1
         beat_ind = self._find_indices(self.binary_centers, lambda x: x == 1)
+
+        test_bpm = len(beat_ind) / (self.duration / 60)
+        if test_bpm < 40:  # reasonable, but still abnormal bpm
+            binary_signal_rev = self.apply_threshold(
+                self.signal_cwt, self.signal_cwt, reverse_threshold=True)
+            binary_centers_rev = self._find_binary_centers(binary_signal_rev)
+            beat_ind_rev = self._find_indices(binary_centers_rev, lambda x: x == 1)
+            test_bpm_rev = len(beat_ind_rev) / (self.duration / 60)
+
+            if test_bpm_rev >= 40:
+                self.binary_signal = binary_signal_rev
+                self.binary_centers = binary_centers_rev
+                beat_ind = beat_ind_rev
+
         beat_time_list = np.take(self.time, tuple(beat_ind))
         return beat_time_list.tolist()
 

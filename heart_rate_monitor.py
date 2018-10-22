@@ -39,10 +39,9 @@ class HeartRateMonitor(object):
         filename = "{}.json".format(self.file_handler.basename)
         self.file_handler.write_data(metrics, filename)
 
-
 if __name__ == "__main__":
-    # 8, 9 (Wellens disease/inverse signal), 12, 15, 16, 24 (weird signal),
-    for i in range(8, 10):
+    # 8, 9 (Wellens disease/inverse signal), 12, 15, 16, 24 (weird signal), 29
+    for i in [8]:
         num = i + 1
         heart_rate_monitor = HeartRateMonitor(
             filename="tests/test_data/test_data{}.csv".format(num),
