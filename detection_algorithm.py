@@ -449,15 +449,39 @@ class Convolution(Threshold):
     def __init__(self, time, signal, **kwargs):
         super().__init__(time, signal, **kwargs)
 
+        self.threshold_frac = kwargs.get('threshold_frac', .5)
+
     def find_beats(self):
         """
         Finds the beats from the signal using convolution
         Returns: Times at which the beats occur.
         """
-        pass
+        sub_signal = self.raw_signal[0:self.filtered_signal_obj.period]
+        convolved_signal = self._convolve_signal(self.raw_signal, sub_signal)
+        self.binary_signal = self.apply_threshold(convolved_signal, self.background)
+        self.binary_centers = self._find_binary_centers(self.binary_signal)
 
-    def _find_signal_period(self):
-        pass
+        # find the indices where it equals 1
+        beat_ind = self._find_indices(self.binary_centers, lambda x: x == 1)
+        test_bpm = len(beat_ind) / (self.duration / 60)
+        if test_bpm < 40:  # reasonable, but still abnormal bpm
+            binary_signal_rev = self.apply_threshold(
+                self.filtered_signal, self.background, reverse_threshold=True)
+
+            binary_centers_rev = self._find_binary_centers(binary_signal_rev)
+            beat_ind_rev = self._find_indices(binary_centers_rev, lambda x: x == 1)
+            test_bpm_rev = len(beat_ind_rev) / (self.duration / 60)
+
+            if test_bpm_rev >= 40:
+                self.binary_signal = binary_signal_rev
+                self.binary_centers = binary_centers_rev
+                beat_ind = beat_ind_rev
+
+        beat_time_list = np.take(self.time, tuple(beat_ind))
+        return beat_time_list.tolist()
+
+    def _convolve_signal(self, signal, sub_signal):
+        return np.convolve(signal, sub_signal, mode="same")
 
 
 class Wavelet(Threshold):
