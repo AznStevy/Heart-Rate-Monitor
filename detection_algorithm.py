@@ -336,6 +336,12 @@ class Convolution(Threshold):
         """
         pass
 
+    def _find_period(self):
+        pass
+
+    def _convolve_signal(self, signal):
+        pass
+
 class Wavelet(ECGDetectionAlgorithm):
     def __init__(self, time, signal):
         pass
