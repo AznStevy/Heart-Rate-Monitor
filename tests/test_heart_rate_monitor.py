@@ -1,5 +1,5 @@
 import pytest
-
+from heart_rate_monitor import HeartRateMonitor
 from filtered_signal import FilteredSignal
 from detection_algorithm import Threshold, Convolution, Wavelet
 
@@ -33,8 +33,9 @@ def test_variables():
 
 
 # --------------- test constructor -------------------
-def test_constructor(test_variables):
-    time_list = test_variables["time"]
-    signal_line = test_variables["line"]
-    _ = FilteredSignal(time_list, signal_line)
+@pytest.mark.parametrize("analyzer", [
+    Threshold, Convolution, Wavelet])
+def test_constructor(test_variables, analyzer):
+    # attempt to create a variable
+    HeartRateMonitor(test_variables["test_1_file"], analyzer)
     assert True
