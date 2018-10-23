@@ -1,6 +1,6 @@
 import pytest
 from filtered_signal import FilteredSignal
-from detection_algorithm import Threshold, Convolution, Wavelet
+from detection_algorithm import Threshold
 
 @pytest.fixture()
 def test_1_data():
