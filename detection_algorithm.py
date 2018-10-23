@@ -457,9 +457,19 @@ class Convolution(Threshold):
         pass
 
     def _find_period(self):
+        """
+        Finds the period of the signal.
+        """
         pass
 
-    def _convolve_signal(self, signal):
+    def _convolve_signal(self, signal, sub_signal):
+
+        """
+        Convolves a period of the signal with the signal.
+        Args:
+            sub_signal (object): sub signal to convolve
+            signal: Signal in question
+        """
         pass
 
 
