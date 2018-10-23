@@ -456,10 +456,6 @@ class Convolution(Threshold):
         """
         pass
 
-    def _find_signal_period(self):
-        pass
-
-
 class Wavelet(Threshold):
     def __init__(self, time, signal, **kwargs):
         super().__init__(time, signal, **kwargs)
