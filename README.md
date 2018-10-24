@@ -12,6 +12,7 @@ Using the `HeartRateMonitor` class, you input the signal filename as well as the
 ### Example
 ```python
 from detection_algorithm import Wavelet
+from heart_rate_monitor import HeartRateMonitor
 
 def main():
     heart_rate_monitor = HeartRateMonitor(
