@@ -31,10 +31,3 @@ def test_variables():
 
 
 # -------------------- test constructor -----------------------
-def test_constructor():
-    assert True
-
-
-@pytest.mark.parametrize("low_pass_cutoff", [])
-def test_constructor_bad_args():
-    assert True
