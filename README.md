@@ -16,12 +16,13 @@ from heart_rate_monitor import HeartRateMonitor
 
 def main():
     heart_rate_monitor = HeartRateMonitor(
-        filename="tests/test_data/test_data1.csv".format(num),
+        filename="tests/test_data/test_data1.csv",
         analyzer=Wavelet)
 
     if heart_rate_monitor is None:
         continue
 
+    # if you do not wish to write the heart rate properties, use to_json()
     metrics = heart_rate_monitor.to_json()
     heart_rate_monitor.write_json()
 
