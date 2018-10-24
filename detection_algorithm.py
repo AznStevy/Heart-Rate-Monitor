@@ -89,7 +89,7 @@ class ECGDetectionAlgorithm(object):
         """
         logging.info("find_num_beats called")
         if self.beats is None:
-            self.find_beats()
+            self.beats = self.find_beats()
         return len(self.beats)
 
     def find_mean_hr_bpm(self):
@@ -170,6 +170,9 @@ class Threshold(ECGDetectionAlgorithm):
         # find the indices where it equals 1
         beat_ind = self._find_indices(self.binary_centers, lambda x: x == 1)
 
+        if not self.duration:
+            self.duration = self.find_duration()
+
         test_bpm = len(beat_ind) / (self.duration / 60)
         if test_bpm < 40:  # reasonable, but still abnormal bpm
             binary_signal_rev = self.apply_threshold(
@@ -187,7 +190,7 @@ class Threshold(ECGDetectionAlgorithm):
         beat_time_list = np.take(self.time, tuple(beat_ind))
         return beat_time_list.tolist()
 
-    def apply_threshold(self, signal, background=None, abs_signal=False, reverse_threshold=False):
+    def apply_threshold(self, signal=None, background=None, abs_signal=False, reverse_threshold=False):
         """
         Applies a threshold of a certain percentage.
         Args:
@@ -200,6 +203,18 @@ class Threshold(ECGDetectionAlgorithm):
 
         """
         logging.info("THRESHOLD apply_threshold called")
+
+        if signal is None:
+            signal = self.raw_signal
+        if type(signal) != np.ndarray:
+            raise TypeError("signal must be type numpy.ndarray")
+        if type(background) != np.ndarray and background is not None:
+            raise TypeError("background must be type numpy.ndarray")
+        if type(abs_signal) != bool:
+            raise TypeError("abs_signal must be type bool")
+        if type(reverse_threshold) != bool:
+            raise TypeError("reverse_threshold must be type bool")
+
         self.threshold, is_negative = self._find_threshold(signal, background,
                                                            reverse_threshold=reverse_threshold)
         if abs_signal:

@@ -1,6 +1,9 @@
 import pytest
+import numpy as np
+from file_handler import FileHandler
 from filtered_signal import FilteredSignal
-from detection_algorithm import Threshold
+from detection_algorithm import ECGDetectionAlgorithm, Threshold
+
 
 @pytest.fixture()
 def test_1_data():
@@ -28,13 +31,183 @@ def test_variables():
         "test_1_file": "tests/test_data/test_data1.csv",
         "test_21_file": "tests/test_data/test_data21.csv"
     }
+    return rel_info
 
 
-# -------------------- test constructor -----------------------
-def test_constructor():
-    assert True
+# test variables
+def filtered_signal_obj(file_num):
+    filename = "tests/test_data/test_data{}.csv".format(file_num)
+    file = FileHandler(filename)
+    filtered_signal_sp = FilteredSignal(file.time, file.signal)
+    return filtered_signal_sp
 
 
-@pytest.mark.parametrize("low_pass_cutoff", [])
-def test_constructor_bad_args():
-    assert True
+@pytest.fixture()
+def test_1_filtered_signal_obj():
+    return filtered_signal_obj(1)
+
+
+@pytest.fixture()
+def test_21_filtered_signal_obj():
+    return filtered_signal_obj(21)
+
+
+# ---------- Abstract class fixtures --------------
+@pytest.fixture()
+def ECGDetectionAlgObj_1():
+    time = test_1_filtered_signal_obj().time
+    signal = test_1_filtered_signal_obj().raw_signal
+    return ECGDetectionAlgorithm(time, signal)
+
+
+@pytest.fixture()
+def ECGDetectionAlgObj_21():
+    time = test_21_filtered_signal_obj().time
+    signal = test_21_filtered_signal_obj().raw_signal
+    return ECGDetectionAlgorithm(time, signal)
+
+
+# -------------------- test ECGDetectionAlgorithms ------------
+def test_ECG_obj_constructor(test_1_filtered_signal_obj):
+    time = test_1_filtered_signal_obj.time
+    signal = test_1_filtered_signal_obj.raw_signal
+
+    return ECGDetectionAlgorithm(time, signal)
+
+
+@pytest.mark.parametrize("time, signal, error", [
+    ((1, 2, 3), [1, 2, 3], TypeError),
+    ([1, 2, 3], (1, 2, 3), TypeError),
+    ([], [1, 2, 3], ValueError),
+    ([1, 2, 3], [], ValueError),
+    ([1, 2, 3], [1, 2], ValueError),
+])
+def test_ECG_constructor_bad_parameters(time, signal, error):
+    with pytest.raises(error):
+        ECGDetectionAlgorithm(time, signal)
+
+
+# ----------- test find_voltage_extremes --------------
+@pytest.mark.parametrize("signal, expected", [
+    ([1, 2, 3], (1, 3)),
+    ([-5, 6, 1, 2, 3.5, 4], (-5, 6))])
+def test_ECG__find_voltage_extremes(ECGDetectionAlgObj_1, signal, expected):
+    assert ECGDetectionAlgObj_1._find_voltage_extremes(signal) == expected
+
+
+@pytest.mark.parametrize("signal, error", [
+    ((1, 2, 3), TypeError)])
+def test_ECG__find_voltage_extremes_bad_input(ECGDetectionAlgObj_1, signal, error):
+    # test if first is smaller than second
+    with pytest.raises(error):
+        ECGDetectionAlgObj_1._find_voltage_extremes(signal)
+
+
+@pytest.mark.parametrize("signal", [
+    [1, 2, 3],
+    [-5, 6, 1, 2, 3.5, 4]])
+def test_ECG__find_voltage_extremes_output(ECGDetectionAlgObj_1, signal):
+    assert type(ECGDetectionAlgObj_1._find_voltage_extremes(signal)) == tuple
+
+
+# ----------- test find_duration --------------
+def test_ECG_find_duration(ECGDetectionAlgObj_1, test_1_data):
+    assert ECGDetectionAlgObj_1.find_duration() == test_1_data["duration"]
+
+
+def test_ECG_find_duration_output(ECGDetectionAlgObj_1):
+    assert type(ECGDetectionAlgObj_1.find_duration()) == float
+
+
+# ---------- Threshold class fixtures --------------
+@pytest.fixture()
+def ThresholdObj_1(test_1_filtered_signal_obj):
+    time = test_1_filtered_signal_obj.time
+    signal = test_1_filtered_signal_obj.raw_signal
+    return Threshold(time, signal)
+
+
+@pytest.fixture()
+def ThresholdObj_21(test_21_filtered_signal_obj):
+    time = test_21_filtered_signal_obj.time
+    signal = test_21_filtered_signal_obj.raw_signal
+    return Threshold(time, signal)
+
+
+# -------------------- test THRESHOLD constructor -----------------------
+def test_threshold_constructor(test_1_filtered_signal_obj):
+    time = test_1_filtered_signal_obj.time
+    signal = test_1_filtered_signal_obj.raw_signal
+    assert Threshold(time, signal)
+
+
+@pytest.mark.parametrize(
+    "time, signal, high_cutoff, low_cutoff, threshold_frac, error", [
+        ([1, 2, 3], [1, 2, 3], 1, "test", 0.5, TypeError),
+        ([1, 2, 3], [1, 2, 3], "test", 1, 0.5, TypeError),
+        ([1, 2, 3], [1, 2, 3], "test", None, 0.5, TypeError),
+        ([1, 2, 3], [1, 2, 3], 1, 50, "test", TypeError), ])
+def test_threshold_constructor_bad_args_type_error(
+        time, signal, high_cutoff, low_cutoff, threshold_frac, error):
+    with pytest.raises(error):
+        Threshold(time=time, signal=signal,
+                  high_pass_cutoff=high_cutoff, low_pass_cutoff=low_cutoff,
+                  threshold_frac=threshold_frac)
+
+
+@pytest.mark.parametrize(
+    "time, signal, high_cutoff, low_cutoff, threshold_frac, error", [
+        ([1, 2, 3], [1, 2, 3], 1, 40, 3, ValueError),
+        ([1, 2, 3], [1, 2, 3], 1, 40, -1, ValueError)])
+def test_threshold_constructor_bad_args_value_error(
+        time, signal, high_cutoff, low_cutoff, threshold_frac, error):
+    with pytest.raises(error):
+        Threshold(time=time, signal=signal,
+                  high_pass_cutoff=high_cutoff, low_pass_cutoff=low_cutoff,
+                  threshold_frac=threshold_frac)
+
+
+# ----------------- test threshold find_beats -----------------
+def test_threshold_find_beats_output(ThresholdObj_21, test_21_data):
+    assert abs(len(ThresholdObj_21.find_beats()) - len(test_21_data["beats"])) < 3
+
+
+def test_threshold_find_beats_output_type(ThresholdObj_21):
+    assert type(ThresholdObj_21.find_beats()) == list
+
+
+# ----------- test find_num_beats --------------
+def test_threshold_find_num_beats(ThresholdObj_21, test_21_data):
+    assert abs(ThresholdObj_21.find_num_beats() - len(test_21_data["beats"])) < 2
+
+
+def test_threshold_find_num_beats_output(ThresholdObj_21):
+    assert type(ThresholdObj_21.find_num_beats()) == int
+
+
+# ----------- test find_mean_hr_bpm --------------
+def test_threshold_find_mean_hr_bpm(ThresholdObj_21, test_21_data):
+    assert abs(ThresholdObj_21.find_mean_hr_bpm() - test_21_data["mean_hr_bpm"]) < 5
+
+
+def test_threshold_find_mean_hr_bpm_output(ThresholdObj_21):
+    assert type(ThresholdObj_21.find_mean_hr_bpm()) == float
+
+
+# ----------------- test threshold apply_threshold -----------------
+@pytest.mark.parametrize("signal, background, abs_signal, reverse_threshold, error", [
+    ([1, 2, 3], (0, 0, 0), True, True, TypeError),
+    ((1, 2, 3), [0, 0, 0], "1", True, TypeError),
+    ([1, 2, 3], [0, 0, 0], True, "1", TypeError),
+])
+def test_threshold_apply_threshold_bad_inputs(ThresholdObj_1,
+                                              signal, background, abs_signal, reverse_threshold, error):
+    with pytest.raises(error):
+        ThresholdObj_1.apply_threshold(signal,
+                                       background=background,
+                                       abs_signal=abs_signal,
+                                       reverse_threshold=reverse_threshold)
+
+
+def test_threshold_apply_threshold_output_type(ThresholdObj_21):
+    assert type(ThresholdObj_21.apply_threshold()) == np.ndarray
