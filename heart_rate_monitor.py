@@ -55,7 +55,7 @@ class HeartRateMonitor(object):
 
 def main():
     # 8, 9 (Wellens disease/inverse signal), 12, 15, 16, 24 (weird signal), 29
-    for i in [1]:
+    for i in [8]:
         num = i + 1
         try:
             heart_rate_monitor = HeartRateMonitor(
