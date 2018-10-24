@@ -2,6 +2,7 @@ import pytest
 from filtered_signal import FilteredSignal
 from detection_algorithm import Wavelet
 
+
 @pytest.fixture()
 def test_1_data():
     """Normal signal, with noise"""
@@ -30,4 +31,61 @@ def test_variables():
     }
 
 
+# test variables
+def filtered_signal_obj(file_num):
+    filename = "tests/test_data/test_data{}.csv".format(file_num)
+    file = FileHandler(filename)
+    filtered_signal_sp = FilteredSignal(file.time, file.signal)
+    return filtered_signal_sp
 
+
+@pytest.fixture()
+def test_1_filtered_signal_obj():
+    return filtered_signal_obj(1)
+
+
+@pytest.fixture()
+def test_21_filtered_signal_obj():
+    return filtered_signal_obj(21)
+
+
+# ---------------- Wavelet class fixtures ----------------------
+@pytest.fixture()
+def WaveletObj_1(test_1_filtered_signal_obj):
+    time = test_1_filtered_signal_obj.time
+    signal = test_1_filtered_signal_obj.raw_signal
+    return Wavelet(time, signal)
+
+
+@pytest.fixture()
+def WaveletObj_21(test_21_filtered_signal_obj):
+    time = test_21_filtered_signal_obj.time
+    signal = test_21_filtered_signal_obj.raw_signal
+    return Wavelet(time, signal)
+
+
+# ---------------- test wavelet instantiation -------------------
+def test_wavelet_instantiation(test_21_filtered_signal_obj):
+    time = test_21_filtered_signal_obj.time
+    signal = test_21_filtered_signal_obj.raw_signal
+    return Wavelet(time, signal)
+
+
+# ----------------- test wavelet find_beats ---------------------
+@pytest.mark.parametrize("reverse_threshold", [
+    True, False])
+def test_wavelet_find_beats_inputs(WaveletObj_21, reverse_threshold):
+    assert WaveletObj_21.find_beats(reverse_threshold=reverse_threshold)
+
+
+@pytest.mark.parametrize("reverse_threshold, error", [
+    ("1", TypeError),
+    ([1, 2, 3], TypeError)])
+def test_wavelet_find_beats_bad_inputs(WaveletObj_21, reverse_threshold, error):
+    with pytest.raises(error):
+        WaveletObj_21.find_beats(reverse_threshold=reverse_threshold)
+
+
+def test_wavelet_find_beats_output_type(WaveletObj_21):
+    resp = WaveletObj_21.find_beats()
+    assert type(resp) == list

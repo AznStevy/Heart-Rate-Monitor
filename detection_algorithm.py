@@ -476,6 +476,9 @@ class Wavelet(Threshold):
         """
         # print("Using OVERWRITTEN find_beats!")
 
+        if type(reverse_threshold) != bool:
+            raise TypeError("reverse_threshold must be type bool.")
+
         self.signal_cwt = self._wavelet_transform()
         self.binary_signal = self.apply_threshold(self.signal_cwt, self.signal_cwt)
         self.binary_centers = self._find_binary_centers(self.binary_signal)
