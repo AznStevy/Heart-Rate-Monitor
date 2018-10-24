@@ -489,7 +489,6 @@ class Wavelet(Threshold):
         Finds the beats from the signal using a continuous wavelet transform.
         Returns: Times at which the beats occur.
         """
-        # print("Using OVERWRITTEN find_beats!")
 
         if type(reverse_threshold) != bool:
             raise TypeError("reverse_threshold must be type bool.")
@@ -500,6 +499,9 @@ class Wavelet(Threshold):
 
         # find the indices where it equals 1
         beat_ind = self._find_indices(self.binary_centers, lambda x: x == 1)
+
+        if not self.duration:
+            self.duration = self.find_duration()
 
         test_bpm = len(beat_ind) / (self.duration / 60)
         if test_bpm < 40:  # reasonable, but still abnormal bpm

@@ -1,4 +1,5 @@
 import pytest
+from file_handler import FileHandler
 from filtered_signal import FilteredSignal
 from detection_algorithm import Wavelet
 
