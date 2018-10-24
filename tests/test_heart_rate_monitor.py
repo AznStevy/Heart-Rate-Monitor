@@ -1,27 +1,9 @@
+import os
+import json
 import pytest
+from file_handler import FileHandler
 from heart_rate_monitor import HeartRateMonitor
-from filtered_signal import FilteredSignal
 from detection_algorithm import Threshold, Convolution, Wavelet
-
-
-@pytest.fixture()
-def test_1_data():
-    """Normal signal, with noise"""
-    metrics = {"num_beats": 35, "duration": 27.775, "voltage_extremes": [-0.68, 1.05],
-               "beats": [0.217, 1.031, 1.844, 2.633, 3.422, 4.211, 5.028, 5.681, 6.678, 7.517, 8.328, 9.122, 9.889,
-                         10.733, 11.586, 12.406, 13.239, 14.058, 14.853, 15.65, 16.444, 17.264, 18.133, 18.956, 19.739,
-                         20.533, 21.306, 22.094, 22.906, 23.722, 24.55, 25.394, 26.2, 26.975, 27.772],
-               "mean_hr_bpm": 75.60756075607561}
-    return metrics
-
-
-@pytest.fixture()
-def test_21_data():
-    """This data is very clean/no noise good for testing."""
-    metrics = {"duration": 13.887, "num_beats": 19, "voltage_extremes": [-0.375, 0.60625],
-               "beats": [0.044, 0.794, 1.544, 2.294, 3.044, 3.794, 4.544, 5.294, 6.044, 6.794, 7.544, 8.294, 9.044,
-                         9.794, 10.544, 11.294, 12.044, 12.794, 13.544], "mean_hr_bpm": 82.09116439835817}
-    return metrics
 
 
 @pytest.fixture()
@@ -30,12 +12,69 @@ def test_variables():
         "test_1_file": "tests/test_data/test_data1.csv",
         "test_21_file": "tests/test_data/test_data21.csv"
     }
+    return rel_info
+
+
+@pytest.fixture()
+def hrm_wavelet_obj():
+    return HeartRateMonitor("tests/test_data/test_data1.csv", Wavelet)
+
+
+@pytest.fixture()
+def hrm_threshold_obj():
+    return HeartRateMonitor("tests/test_data/test_data1.csv", Threshold)
 
 
 # --------------- test constructor -------------------
 @pytest.mark.parametrize("analyzer", [
-    Threshold, Convolution, Wavelet])
+    Threshold, Wavelet])
 def test_constructor(test_variables, analyzer):
     # attempt to create a variable
-    HeartRateMonitor(test_variables["test_1_file"], analyzer)
-    assert True
+    assert HeartRateMonitor(test_variables["test_1_file"], analyzer)
+
+
+@pytest.mark.parametrize("filename, analyzer, error", [
+    ("tests/test_data/test_fake.csv", Wavelet, FileNotFoundError),
+    ("tests/test_data/test_data1.csv", bool, TypeError),
+    ("tests/test_data/test_data1.csv", HeartRateMonitor, TypeError)
+])
+def test_hrm_constructor_bad_file(filename, analyzer, error):
+    # attempt to create a variable
+    with pytest.raises(error):
+        HeartRateMonitor(filename, analyzer)
+
+
+@pytest.mark.parametrize("filename, analyzer", [
+    ("tests/test_data/test_data1.csv", bool),
+    ("tests/test_data/test_data1.csv", HeartRateMonitor)
+])
+def test_hrm_constructor_bad_analyzer_type(filename, analyzer):
+    with pytest.raises(TypeError):
+        HeartRateMonitor(filename, analyzer)
+
+
+# ----------------- test to_json ---------------------
+def test_hrm_to_json(hrm_wavelet_obj):
+    # attempt to create a variable
+    ret_json = hrm_wavelet_obj.to_json()
+    must_ret = ["beats", "duration", "num_beats", "mean_hr_bpm", "voltage_extremes"]
+
+    assert set(ret_json.keys()).issubset(set(must_ret))
+
+
+# ----------------- test write_json -------------------
+def test_hrm_write_json_file(hrm_wavelet_obj):
+    # attempt to create a variable
+    filename = hrm_wavelet_obj.write_json()
+    assert os.path.exists(filename)
+
+
+def test_hrm_write_json_file_read(hrm_wavelet_obj):
+    # attempt to create a variable
+    filename = hrm_wavelet_obj.write_json()
+
+    with open(filename) as data_file:
+        data = json.load(data_file)
+
+    # I really just care if it loads/wrote properly
+    assert data
