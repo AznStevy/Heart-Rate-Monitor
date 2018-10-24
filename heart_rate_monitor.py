@@ -10,29 +10,16 @@ class HeartRateMonitor(object):
     def __init__(self, filename, analyzer):
         logging.info("Heart rate monitor instantiated.")
         filename = filename
-        try:
-            self.file_handler = FileHandler(filename)
-            self.time = self.file_handler.time
-            self.raw_signal = self.file_handler.signal
-        except TypeError as e:
-            logging.exception(e)
-            return None
-        except FileNotFoundError as e:
-            logging.exception(e)
-            return None
+
+        self.file_handler = FileHandler(filename)
+        self.time = self.file_handler.time
+        self.raw_signal = self.file_handler.signal
 
         if isinstance(analyzer, ECGDetectionAlgorithm):
             raise TypeError("Analyzer must be type ECGDetectionAlgorithm.")
 
-        try:
-            self.analyzer = analyzer(self.time, self.raw_signal,
-                                     name='{}'.format(self.file_handler.filename))
-        except TypeError as e:
-            logging.exception(e)
-            return None
-        except ValueError as e:
-            logging.exception(e)
-            return None
+        self.analyzer = analyzer(self.time, self.raw_signal,
+                                 name='{}'.format(self.file_handler.filename))
         self.analyzer.start_analysis()
 
     def to_json(self):
@@ -62,8 +49,8 @@ class HeartRateMonitor(object):
             self.file_handler.write_data(metrics, filename)
         except TypeError as e:
             logging.exception(e)
-
         logging.info("Wrote json to {}".format(filename))
+        return filename
 
 
 def main():
