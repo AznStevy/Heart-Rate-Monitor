@@ -464,17 +464,89 @@ class Convolution(Threshold):
     def __init__(self, time, signal, **kwargs):
         super().__init__(time, signal, **kwargs)
 
-        self.threshold_frac = kwargs.get('threshold_frac', .5)
+        self.convolved_signal = None
 
-    def find_beats(self):
+    def find_beats(self, reverse_threshold=False):
         """
         Finds the beats from the signal using convolution
         Returns: Times at which the beats occur.
         """
+        if type(reverse_threshold) != bool:
+            raise TypeError("reverse_threshold must be type bool.")
+
         sub_signal = self.raw_signal[0:self.filtered_signal_obj.period]
-        convolved_signal = self._convolve_signal(self.raw_signal, sub_signal)
-        self.binary_signal = self.apply_threshold(convolved_signal, self.background)
+        self.convolved_signal = self._convolve_signal(self.raw_signal, sub_signal)
+        self.binary_signal = self.apply_threshold(self.convolved_signal, self.convolved_signal)
         self.binary_centers = self._find_binary_centers(self.binary_signal)
+
+        # find the indices where it equals 1
+        beat_ind = self._find_indices(self.binary_centers, lambda x: x == 1)
+
+        if not self.duration:
+            self.duration = self.find_duration()
+
+        test_bpm = len(beat_ind) / (self.duration / 60)
+        if test_bpm < 40:  # reasonable, but still abnormal bpm
+            binary_signal_rev = self.apply_threshold(
+                self.convolved_signal, self.convolved_signal, reverse_threshold=True)
+
+            binary_centers_rev = self._find_binary_centers(binary_signal_rev)
+            beat_ind_rev = self._find_indices(binary_centers_rev, lambda x: x == 1)
+            test_bpm_rev = len(beat_ind_rev) / (self.duration / 60)
+
+            if test_bpm_rev >= 40:
+                self.binary_signal = binary_signal_rev
+                self.binary_centers = binary_centers_rev
+                beat_ind = beat_ind_rev
+
+        beat_time_list = np.take(self.time, tuple(beat_ind))
+        return beat_time_list.tolist()
+
+    def _convolve_signal(self, signal, sub_signal):
+        return np.convolve(signal, sub_signal, mode='same')
+
+    def plot_graph(self, file_path: str = None):
+        """
+        Plots a graph of relevant information for the threshold algorithm.
+        Args:
+            file_path: The path of the file to output.
+        """
+
+        fig = plt.figure(figsize=(10, 6))
+        plt.title("{}".format(self.name))
+        plt.rcParams['text.antialiased'] = True
+        plt.style.use('ggplot')
+        ax1 = fig.add_subplot(211)
+        ax1.grid(True)
+        ax1.set_xlim([min(self.time), max(self.time)])
+        ax1.plot(self.time, self.raw_signal,
+                 label='Raw Signal', linewidth=1, antialiased=True)
+        ax1.plot(self.time, self.threshold,
+                 label='Threshold', linewidth=1, antialiased=True)
+        ax1.plot(self.time, self.convolved_signal,
+                 label='Convolution', linewidth=1, antialiased=True)
+        _, max_val = self._find_voltage_extremes(self.filtered_signal)
+        ax1.plot(self.time, self.binary_signal * max_val,
+                 label='Binary Signal', linewidth=5, antialiased=True)
+        ax1.plot(self.time, self.binary_centers * max_val,
+                 label='Binary Centers', linewidth=5, antialiased=True)
+        ax1.legend(loc='best')
+
+        ax2 = fig.add_subplot(212)
+        freq_raw, fft_out_raw = self.filtered_signal_obj.get_fft(is_filtered=False)
+        ax2.plot(freq_raw, abs(fft_out_raw),
+                 label='Raw Signal', linewidth=1)  # plotting the spectrum
+        freq_filtered, fft_out_filtered = self.filtered_signal_obj.get_fft(is_filtered=True)
+        ax2.plot(freq_filtered, abs(fft_out_filtered),
+                 label='Filtered Signal', linewidth=1)  # plotting the spectrum
+        ax2.set_xlabel('Freq (Hz)')
+        ax2.set_ylabel('|Y(freq)|')
+        ax2.legend(loc='best')
+        fig.tight_layout()
+        if file_path:
+            fig.savefig(file_path)
+        plt.show()
+        plt.close()
 
 
 class Wavelet(Threshold):
