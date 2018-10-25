@@ -3,7 +3,7 @@ import json
 import pytest
 from file_handler import FileHandler
 from heart_rate_monitor import HeartRateMonitor
-from detection_algorithm import Threshold, Convolution, Wavelet
+from detection_algorithm import Threshold, Wavelet
 
 
 @pytest.fixture()
