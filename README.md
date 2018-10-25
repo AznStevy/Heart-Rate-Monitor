@@ -4,7 +4,7 @@
 ## Heart Rate Monitor
 Heart rate monitors have been an essential tool in evaluating the health of a person as well as an integral part of diagnosis for cardiac disorders ranging from arrhythmia to conditions like Wellen's syndrome.
 
-This is code that acts as a heart rate analyzer (rather than a monitor). It can determine heartbeats based on three different algorithms: Thresholding, Convolution + Thresholding, and Wavelet transforms + Thresholding. I've found the Wavelet method to work the best.
+This is code that acts as a heart rate analyzer (rather than a monitor). It can determine heartbeats based on two different algorithms: Thresholding and Wavelet transform + Thresholding. I've found the Wavelet method to work the best. The goal here was for anyone to write their own detection method and be able to use it with the `HeartRateMonitor` class.
 
 ## Usage
 Using the `HeartRateMonitor` class, you input the signal filename as well as the detection method. To get an output file, call the `write_json()` method.
