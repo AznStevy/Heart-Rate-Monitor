@@ -34,7 +34,7 @@ class FilteredSignal(object):
         # other class attributes
         self.period = 0  # for moving average
         self.bg_sub_signal = None
-        # don't need to raise exceptions here because hancled above.
+        # don't need to raise exceptions here because handled above.
         self.fs = self.determine_frequency(self.time)
         self.filtered_signal = self.clean_signal(filter_sig=filter_sig)
 
@@ -180,10 +180,11 @@ class FilteredSignal(object):
             logging.exception(e)
             return signal
 
-    def apply_high_pass(self, signal=None, high_cutoff: int = None, order: int = 1):
+    def apply_high_pass(self, signal=None, high_cutoff: int = None, order: int = 1, fs=None):
         """
         Applies a high-pass filter.
         Args:
+            fs (float): Sampling frequency
             signal: Signal to high-pass
             high_cutoff (int): Cutoff frequency in Hz
             order: Order of the filter
@@ -210,7 +211,13 @@ class FilteredSignal(object):
         if order < 1:
             raise ValueError("High-pass order must be >= 1.")
 
-        nyq = 0.5 * self.fs
+        if not fs:
+            fs = self.fs
+        else:
+            if type(fs) != float and type(fs) != int:
+                raise TypeError("fs must type float.")
+
+        nyq = 0.5 * fs
         high = high_cutoff / nyq
         b, a = sp.butter(order, high, btype="highpass")
         filtered_signal = sp.filtfilt(b, a, signal)
@@ -218,10 +225,11 @@ class FilteredSignal(object):
             raise ValueError("Failed to high-pass filter.")
         return filtered_signal
 
-    def apply_low_pass(self, signal=None, low_cutoff: int = None, order: int = 1):
+    def apply_low_pass(self, signal=None, low_cutoff: int = None, order: int = 1, fs=None):
         """
         Applies a low-pass filter.
         Args:
+            fs (float): Sampling frequency
             signal: Signal to low-pass
             low_cutoff: Cutoff frequency in Hz
             order: Order of the filter
@@ -247,7 +255,13 @@ class FilteredSignal(object):
         if order < 1:
             raise ValueError("Low-pass order must be >= 1.")
 
-        nyq = 0.5 * self.fs
+        if not fs:
+            fs = self.fs
+        else:
+            if type(fs) != float and type(fs) != int:
+                raise TypeError("fs must type float.")
+
+        nyq = 0.5 * fs
         high = low_cutoff / nyq
         b, a = sp.butter(order, high, btype="lowpass")
         filtered_signal = sp.filtfilt(b, a, signal)
