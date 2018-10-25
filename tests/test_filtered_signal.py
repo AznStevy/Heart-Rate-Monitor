@@ -189,6 +189,17 @@ def test_apply_moving_average_sub_output(test_1_filtered_signal_obj):
     assert type(test_1_filtered_signal_obj.apply_moving_average_sub()) == np.ndarray
 
 
+def test_apply_moving_average_sub_functionatlity_same(test_1_filtered_signal_obj):
+    assert np.array_equal(test_1_filtered_signal_obj.bg_sub_signal,
+           test_1_filtered_signal_obj.apply_moving_average_sub(test_1_filtered_signal_obj.raw_signal))
+
+
+def test_apply_moving_average_sub_functionatlity_cross(
+        test_1_filtered_signal_obj, test_21_filtered_signal_obj):
+    assert np.array_equal(test_1_filtered_signal_obj.bg_sub_signal,
+           test_21_filtered_signal_obj.apply_moving_average_sub(test_1_filtered_signal_obj.raw_signal))
+
+
 # ---------------- test noise_reduction ----------------------------
 @pytest.mark.parametrize("signal, error", [
     (("1", "2", "3"), TypeError),

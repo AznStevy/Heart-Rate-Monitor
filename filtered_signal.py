@@ -34,7 +34,7 @@ class FilteredSignal(object):
         # other class attributes
         self.period = 0  # for moving average
         self.bg_sub_signal = None
-        # don't need to raise exceptions here because hancled above.
+        # don't need to raise exceptions here because handled above.
         self.fs = self.determine_frequency(self.time)
         self.filtered_signal = self.clean_signal(filter_sig=filter_sig)
 
