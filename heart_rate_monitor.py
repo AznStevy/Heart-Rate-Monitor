@@ -1,7 +1,7 @@
 import os
 import logging
 from file_handler import FileHandler
-from detection_algorithm import ECGDetectionAlgorithm, Threshold, Convolution, Wavelet
+from detection_algorithm import ECGDetectionAlgorithm, Threshold, Wavelet
 
 logging.basicConfig(filename='heart_rate_monitor.log', level=logging.DEBUG)
 

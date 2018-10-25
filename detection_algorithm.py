@@ -460,23 +460,6 @@ class Threshold(ECGDetectionAlgorithm):
         return np.array_equal(signal, signal.astype(bool))
 
 
-class Convolution(Threshold):
-    def __init__(self, time, signal, **kwargs):
-        super().__init__(time, signal, **kwargs)
-
-        self.threshold_frac = kwargs.get('threshold_frac', .5)
-
-    def find_beats(self):
-        """
-        Finds the beats from the signal using convolution
-        Returns: Times at which the beats occur.
-        """
-        sub_signal = self.raw_signal[0:self.filtered_signal_obj.period]
-        convolved_signal = self._convolve_signal(self.raw_signal, sub_signal)
-        self.binary_signal = self.apply_threshold(convolved_signal, self.background)
-        self.binary_centers = self._find_binary_centers(self.binary_signal)
-
-
 class Wavelet(Threshold):
     def __init__(self, time, signal, **kwargs):
         super().__init__(time, signal, **kwargs)
