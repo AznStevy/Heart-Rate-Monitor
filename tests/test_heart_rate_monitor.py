@@ -40,6 +40,7 @@ def test_hrm_constructor_bad_file(filename, analyzer, error):
     with pytest.raises(error):
         HeartRateMonitor(filename, analyzer)
 
+
 @pytest.mark.parametrize("filename, analyzer", [
     ("tests/test_data/test_data1.csv", bool),
     ("tests/test_data/test_data1.csv", 4)
