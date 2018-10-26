@@ -201,7 +201,7 @@ class Threshold(ECGDetectionAlgorithm):
                 beat_ind = beat_ind_rev
 
         beat_time_list = np.take(self.time, tuple(beat_ind))
-        return beat_time_list.tolist()
+        return np.array(beat_time_list)
 
     def apply_threshold(self, signal=None, background=None, abs_signal=False, reverse_threshold=False):
         """
@@ -566,7 +566,7 @@ class Wavelet(Threshold):
                 beat_ind = beat_ind_rev
 
         beat_time_list = np.take(self.time, tuple(beat_ind))
-        return beat_time_list.tolist()
+        return np.array(beat_time_list)
 
     def _wavelet_transform(self):
         # limit to the average detected period the signal

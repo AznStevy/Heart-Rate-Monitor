@@ -173,7 +173,7 @@ def test_threshold_find_beats_output(ThresholdObj_21, test_21_data):
 
 
 def test_threshold_find_beats_output_type(ThresholdObj_21):
-    assert type(ThresholdObj_21.find_beats()) == list
+    assert type(ThresholdObj_21.find_beats()) == np.ndarray
 
 
 # ----------- test find_num_beats --------------

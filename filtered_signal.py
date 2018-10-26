@@ -287,6 +287,7 @@ class FilteredSignal(object):
         time = np.array(time)  # ensure numpy
         periods = np.diff(time)
 
+        logging.info("Determining frequency using mode of time deltas.")
         return float(1 / stats.mode(periods, axis=None)[0])
 
     def get_fft(self, signal=None, is_filtered: bool = False):

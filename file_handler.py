@@ -49,7 +49,6 @@ class FileHandler(object):
         if not filename:
             filename = self.filename
 
-
         base = os.path.basename(filename)
         return str(os.path.splitext(base)[0])
 
@@ -88,6 +87,8 @@ class FileHandler(object):
                 raise TypeError("Incorrect file type.")
 
             verified_data = self._verify_data(filename)
+            if verified_data is None:
+                raise ValueError("File could not be read.")
             self.time = verified_data[:, 0]
             self.signal = verified_data[:, 1]
             return self.time, self.signal
@@ -123,9 +124,13 @@ class FileHandler(object):
         Returns: Matrix without any NaN
 
         """
-        data = np.array(data)
-        nan_indices = ~np.isnan(data).any(axis=1)
-        return data[nan_indices]
+        og_data = np.array(data)
+        nan_indices = ~np.isnan(og_data).any(axis=1)
+        fixed_data = data[nan_indices]
+
+        if fixed_data.size != og_data.size:
+            logging.warning("NaN elements from numpy.ndarray removed.")
+        return fixed_data
 
     def _verify_dimensions(self, data):
         """
@@ -150,13 +155,18 @@ class FileHandler(object):
 
     def write_data(self, json_object, filename):
         """
-        Writes json object to specified filename.
+        Writes json object to specified filename. Converts numpy arrays to lists.
         Args:
             json_object: dictionary object with data
             filename: name of file to save to
         """
-        if type(json_object) is dict:
-            with open(filename, 'w') as outfile:
-                json.dump(json_object, outfile)
-        else:
+        if type(json_object) != dict:
             raise TypeError("Data type must be dict.")
+
+        # convert to list if np array
+        for attr in json_object.keys():
+            if type(json_object[attr]) == np.ndarray:
+                json_object[attr] = json_object[attr].tolist()
+
+        with open(filename, 'w') as outfile:
+            json.dump(json_object, outfile)
