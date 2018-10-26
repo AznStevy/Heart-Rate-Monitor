@@ -123,9 +123,13 @@ class FileHandler(object):
         Returns: Matrix without any NaN
 
         """
-        data = np.array(data)
-        nan_indices = ~np.isnan(data).any(axis=1)
-        return data[nan_indices]
+        og_data = np.array(data)
+        nan_indices = ~np.isnan(og_data).any(axis=1)
+        fixed_data = data[nan_indices]
+
+        if fixed_data.size != og_data.size:
+            logging.warning("NaN elements from numpy.ndarray removed.")
+        return fixed_data
 
     def _verify_dimensions(self, data):
         """
