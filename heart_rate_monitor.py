@@ -57,17 +57,18 @@ class HeartRateMonitor(object):
 
 def main():
     # 8, 9 (Wellens disease/inverse signal), 12, 15, 16, 24 (weird signal), 29
-    for i in [0]:
+    for i in range(31):
         num = i + 1
         try:
             heart_rate_monitor = HeartRateMonitor(
                 filename="tests/test_data/test_data{}.csv".format(num),
-                analyzer=Wavelet, time_interval=(0.13, 0.16))
+                analyzer=Wavelet)
 
             if heart_rate_monitor is None:
                 continue
         except TypeError as e:
             logging.exception(e)
+            continue
 
         metrics = heart_rate_monitor.to_json()
         heart_rate_monitor.analyzer.plot_graph()
