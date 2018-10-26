@@ -1,4 +1,5 @@
 import pytest
+import numpy as np
 from file_handler import FileHandler
 from filtered_signal import FilteredSignal
 from detection_algorithm import Wavelet
@@ -76,7 +77,7 @@ def test_wavelet_instantiation(test_21_filtered_signal_obj):
 @pytest.mark.parametrize("reverse_threshold", [
     True, False])
 def test_wavelet_find_beats_inputs(WaveletObj_21, reverse_threshold):
-    assert WaveletObj_21.find_beats(reverse_threshold=reverse_threshold)
+    assert WaveletObj_21.find_beats(reverse_threshold=reverse_threshold).size != 0
 
 
 @pytest.mark.parametrize("reverse_threshold, error", [
@@ -89,4 +90,4 @@ def test_wavelet_find_beats_bad_inputs(WaveletObj_21, reverse_threshold, error):
 
 def test_wavelet_find_beats_output_type(WaveletObj_21):
     resp = WaveletObj_21.find_beats()
-    assert type(resp) == list
+    assert type(resp) == np.ndarray

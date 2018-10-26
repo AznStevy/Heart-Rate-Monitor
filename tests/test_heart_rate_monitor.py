@@ -1,7 +1,6 @@
 import os
 import json
 import pytest
-from file_handler import FileHandler
 from heart_rate_monitor import HeartRateMonitor
 from detection_algorithm import Threshold, Wavelet
 
@@ -67,9 +66,7 @@ def test_hrm_write_json_file(hrm_wavelet_obj):
 
 
 def test_hrm_write_json_file_read(hrm_wavelet_obj):
-    # attempt to create a variable
     filename = hrm_wavelet_obj.write_json()
-
     with open(filename) as data_file:
         data = json.load(data_file)
 
