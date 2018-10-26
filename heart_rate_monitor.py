@@ -7,7 +7,7 @@ logging.basicConfig(filename='heart_rate_monitor.log', level=logging.DEBUG)
 
 
 class HeartRateMonitor(object):
-    def __init__(self, filename, analyzer):
+    def __init__(self, filename, analyzer, **kwargs):
         logging.info("Heart rate monitor instantiated.")
         filename = filename
 
@@ -20,7 +20,9 @@ class HeartRateMonitor(object):
 
         self.analyzer = analyzer(self.time, self.raw_signal,
                                  name='{}'.format(self.file_handler.filename))
-        self.analyzer.start_analysis()
+
+        time_interval = kwargs.get('time_interval', None)
+        self.analyzer.start_analysis(time_interval=time_interval)
 
     def to_json(self):
         """
@@ -55,12 +57,12 @@ class HeartRateMonitor(object):
 
 def main():
     # 8, 9 (Wellens disease/inverse signal), 12, 15, 16, 24 (weird signal), 29
-    for i in [8]:
+    for i in [0]:
         num = i + 1
         try:
             heart_rate_monitor = HeartRateMonitor(
                 filename="tests/test_data/test_data{}.csv".format(num),
-                analyzer=Wavelet)
+                analyzer=Wavelet, time_interval=(0.13, 0.16))
 
             if heart_rate_monitor is None:
                 continue
