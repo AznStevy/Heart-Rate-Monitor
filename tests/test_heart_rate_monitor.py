@@ -35,18 +35,15 @@ def test_constructor(test_variables, analyzer):
 
 @pytest.mark.parametrize("filename, analyzer, error", [
     ("tests/test_data/test_fake.csv", Wavelet, FileNotFoundError),
-    ("tests/test_data/test_data1.csv", bool, TypeError),
-    ("tests/test_data/test_data1.csv", HeartRateMonitor, TypeError)
-])
+    ("tests/test_data/test_data1.csv", bool, TypeError)])
 def test_hrm_constructor_bad_file(filename, analyzer, error):
     # attempt to create a variable
     with pytest.raises(error):
         HeartRateMonitor(filename, analyzer)
 
-
 @pytest.mark.parametrize("filename, analyzer", [
     ("tests/test_data/test_data1.csv", bool),
-    ("tests/test_data/test_data1.csv", HeartRateMonitor)
+    ("tests/test_data/test_data1.csv", 4)
 ])
 def test_hrm_constructor_bad_analyzer_type(filename, analyzer):
     with pytest.raises(TypeError):

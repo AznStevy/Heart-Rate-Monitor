@@ -49,6 +49,7 @@ class FileHandler(object):
         if not filename:
             filename = self.filename
 
+
         base = os.path.basename(filename)
         return str(os.path.splitext(base)[0])
 

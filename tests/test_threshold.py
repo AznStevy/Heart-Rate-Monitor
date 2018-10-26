@@ -194,6 +194,29 @@ def test_threshold_find_mean_hr_bpm_output(ThresholdObj_21):
     assert type(ThresholdObj_21.find_mean_hr_bpm()) == float
 
 
+@pytest.mark.parametrize(
+    "time_interval, error", [
+        ([.1, .12], TypeError),
+        ((.1, .12, .13), ValueError),
+        ((".1", .12), TypeError),
+        ((.1, 2), ValueError),
+        ((.12, .11), ValueError),
+        ((0, 1.5), ValueError),
+    ])
+def test_threshold_find_mean_hr_bpm_inputs_bad(ThresholdObj_21, time_interval, error):
+    with pytest.raises(error):
+        ThresholdObj_21.find_mean_hr_bpm(time_interval=time_interval)
+
+
+@pytest.mark.parametrize(
+    "time_interval, expected_hr", [
+        ((.03, .06), 67),
+        ((.13, .17), 75), ])
+def test_threshold_find_mean_hr_bpm_inputs_range(ThresholdObj_21, time_interval, expected_hr):
+    test_hr = ThresholdObj_21.find_mean_hr_bpm(time_interval=time_interval)
+    assert abs(test_hr - expected_hr) < 2
+
+
 # ----------------- test threshold apply_threshold -----------------
 @pytest.mark.parametrize("signal, background, abs_signal, reverse_threshold, error", [
     ([1, 2, 3], (0, 0, 0), True, True, TypeError),

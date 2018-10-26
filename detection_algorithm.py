@@ -30,7 +30,7 @@ class ECGDetectionAlgorithm(object):
         self.mean_hr_bpm = None
         self.voltage_extremes = None
 
-    def start_analysis(self):
+    def start_analysis(self, time_interval=None):
         """
         Begins the analysis to get necessary return parameters
         """
@@ -40,7 +40,14 @@ class ECGDetectionAlgorithm(object):
 
         self.beats = self.find_beats()
         self.num_beats = self.find_num_beats()
-        self.mean_hr_bpm = self.find_mean_hr_bpm()
+        try:
+            self.mean_hr_bpm = self.find_mean_hr_bpm(time_interval=time_interval)
+        except ValueError as e:
+            self.mean_hr_bpm = None
+            logging.exception(e)
+        except TypeError as e:
+            self.mean_hr_bpm = None
+            logging.exception(e)
         logging.info("Heartbeat analysis completed.")
 
     def find_voltage_extremes(self):
@@ -69,6 +76,8 @@ class ECGDetectionAlgorithm(object):
         signal = np.array(signal)
         min_sig = np.min(signal)
         max_sig = np.max(signal)
+        if max_sig >= 300:
+            logging.warning("Voltage is too high to be biologically relevant.")
         return min_sig, max_sig
 
     def find_duration(self):
@@ -92,20 +101,24 @@ class ECGDetectionAlgorithm(object):
             self.beats = self.find_beats()
         return len(self.beats)
 
-    def find_mean_hr_bpm(self):
+    def _find_nearest_index(self, array, value):
         """
-        Finds the mean heartrate beats per minute for signal.
-        Returns: mean heartrate bpm.
+        Finds the index which is nearest to the value.
+        Args:
+            array: The array in which to find the value
+            value: Value in question.
+
+        Returns:
+            int: Nearest index to the value.
 
         """
-        logging.info("find_mean_hr_bpm called")
-        if self.duration is None:
-            self.duration = self.find_duration()
-        if self.beats is None:
-            self.beats = self.find_beats()
+        array = np.asarray(array)
+        idx = (np.abs(array - value)).argmin()
+        return idx
 
-        bpm = float(len(self.beats) / float(self.duration / 60))
-        return bpm
+    @abstractmethod
+    def find_mean_hr_bpm(self, time_interval=None):
+        pass
 
     @abstractmethod
     def find_beats(self):
@@ -289,6 +302,58 @@ class Threshold(ECGDetectionAlgorithm):
         pos = signal[np.where(signal > 0)]
         neg = signal[np.where(signal < 0)]
         return len(pos), len(neg)
+
+    def find_mean_hr_bpm(self, time_interval=None):
+        """
+        Finds the mean heart rate beats per minute for signal.
+        Args:
+            time_interval (tuple): Interval in minutes of the signal to find mean hr bpm.
+
+        Returns: mean heart rate bpm within the designated time interval.
+
+        """
+        logging.info("find_mean_hr_bpm called")
+
+        # get necessary information if not already calculated
+        if self.duration is None:
+            self.duration = self.find_duration()
+        if self.beats is None:
+            self.beats = self.find_beats()
+
+        if time_interval is None:
+            time_interval = (min(self.time) / 60, max(self.time) / 60)
+        elif type(time_interval) != tuple:
+            raise TypeError("interval must be type tuple.")
+        elif len(time_interval) != 2:
+            raise ValueError("interval tuple must have two elements.")
+        elif (type(time_interval[0]) != float and type(time_interval[0]) != int) or \
+                (type(time_interval[1]) != float and type(time_interval[1]) != int):
+            raise TypeError("tuple elements must be type float or int.")
+        elif time_interval[0] * 60 < min(self.time) or \
+                                time_interval[1] * 60 > max(self.time):
+            raise ValueError("interval tuple must have proper range.")
+        elif time_interval[0] >= time_interval[1]:
+            raise ValueError("interval tuple must have proper range.")
+        elif (time_interval[1] - time_interval[0]) * 60 > self.duration:
+            # check if they are within range
+            raise ValueError("interval must be less than signal duration.")
+
+        # find proper signal and time intervals
+        duration_oi_sec = (time_interval[0] * 60, time_interval[1] * 60)
+        duration_indices = (self._find_nearest_index(self.time, duration_oi_sec[0]),
+                            self._find_nearest_index(self.time, duration_oi_sec[1]))
+        duration_indices = np.array(duration_indices)
+
+        if self.binary_centers is None:
+            self.find_beats()
+
+        bin_center_oi = self.binary_centers[duration_indices[0]: duration_indices[1]]
+        num_beats_oi = self._find_indices(bin_center_oi, lambda x: x == 1)
+
+        duration_oi = time_interval[1] - time_interval[0]  # minutes
+
+        bpm = float(len(num_beats_oi) / float(duration_oi))
+        return bpm
 
     def plot_graph(self, file_path: str = None):
         """
