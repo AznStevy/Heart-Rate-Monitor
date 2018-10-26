@@ -76,6 +76,8 @@ class ECGDetectionAlgorithm(object):
         signal = np.array(signal)
         min_sig = np.min(signal)
         max_sig = np.max(signal)
+        if max_sig >= 300:
+            logging.warning("Voltage is too high to be biologically relevant.")
         return min_sig, max_sig
 
     def find_duration(self):
