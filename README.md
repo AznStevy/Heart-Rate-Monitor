@@ -6,11 +6,14 @@ Heart rate monitors have been an essential tool in evaluating the health of a pe
 
 This is code that acts as a heart rate analyzer (rather than a monitor). It can determine heartbeats based on two different algorithms: Thresholding and Wavelet transform + Thresholding. I've found the Wavelet method to work the best. The goal here was for anyone to write their own detection method and be able to use it with the `HeartRateMonitor` class.
 
+## Installation
+Using a virtual environment with a python environmental variable, run the command below to get the necessary packages: ```pip install -r requirements.txt```
+
 ## Structure
 ### `FileHandler`
 This class is a file handler specifically used for a specific kind of csv which contains two strips of data, one being a time array and the other being the signal. Upon initialization, the class checks the dimensions and orientation of the data to ensure it can be properly processed. It then checks for missing and/or non-numeric values and gets rid of them. Lastly, it separates the data int to `time` and `raw_signal` attributes to be used by other classes.
 
-### detection_algorithm
+### `detection_algorithm`
 #### ECGDetectionAlgorithm
 The `ECGDetectionAlgorithm` is meant to be somewhat abstract class which is only differentiated by its `find_mean_hr_bpm`, `find_beats`, and `plot_graph` methods. The core functionality and attributes of the final return which can be easily handled are handled here such as `find_voltage_extremes`, `find_duration`, and `find_num_beats` (which requires the `find_beats` abstract method, but it must be implemented in extended classes).
 
