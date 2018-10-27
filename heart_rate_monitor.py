@@ -27,8 +27,8 @@ class HeartRateMonitor(object):
     def to_json(self) -> dict:
         """
         Converts relevant properties into a json/dict object.
-        Returns: json object of relevant properties.
-
+        Returns:
+            dict: json object of relevant properties.
         """
         logging.info("to_json called")
         dict_obj = {
@@ -43,6 +43,9 @@ class HeartRateMonitor(object):
     def write_json(self) -> str:
         """
         Writes json to a file called the same base name with .json extension.
+
+        Returns:
+            str: The output filename.
         """
         logging.info("write_json called")
         metrics = self.to_json()
