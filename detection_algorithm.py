@@ -50,7 +50,7 @@ class ECGDetectionAlgorithm(object):
             logging.exception(e)
         logging.info("Heartbeat analysis completed.")
 
-    def find_voltage_extremes(self):
+    def find_voltage_extremes(self) -> tuple:
         """
         Finds the voltage extremes from the original signal.
 
@@ -61,7 +61,7 @@ class ECGDetectionAlgorithm(object):
         except TypeError as e:
             logging.exception(e)
 
-    def _find_voltage_extremes(self, signal):
+    def _find_voltage_extremes(self, signal) -> tuple:
         """
         Finds the voltage extremes from a given signal.
         Args:
@@ -76,11 +76,11 @@ class ECGDetectionAlgorithm(object):
         signal = np.array(signal)
         min_sig = np.min(signal)
         max_sig = np.max(signal)
-        if max_sig >= 300:
+        if max_sig >= .3:
             logging.warning("Voltage is too high to be biologically relevant.")
         return min_sig, max_sig
 
-    def find_duration(self):
+    def find_duration(self) -> float:
         """
         Finds total duration of the signal.
         Returns: Duration in seconds.
@@ -90,7 +90,7 @@ class ECGDetectionAlgorithm(object):
         duration = float(self.time[-1]) - float((self.time[0]))  # in seconds
         return duration
 
-    def find_num_beats(self):
+    def find_num_beats(self) -> int:
         """
         Finds number of beats in the signal.
         Returns: number of beats
@@ -101,7 +101,7 @@ class ECGDetectionAlgorithm(object):
             self.beats = self.find_beats()
         return len(self.beats)
 
-    def _find_nearest_index(self, array, value):
+    def _find_nearest_index(self, array, value) -> int:
         """
         Finds the index which is nearest to the value.
         Args:
@@ -117,11 +117,11 @@ class ECGDetectionAlgorithm(object):
         return idx
 
     @abstractmethod
-    def find_mean_hr_bpm(self, time_interval=None):
+    def find_mean_hr_bpm(self, time_interval=None) -> float:
         pass
 
     @abstractmethod
-    def find_beats(self):
+    def find_beats(self) -> np.ndarray:
         pass
 
     @abstractmethod
@@ -171,7 +171,7 @@ class Threshold(ECGDetectionAlgorithm):
         self.falling_edges = None
         self.signal_period = None
 
-    def find_beats(self):
+    def find_beats(self) -> np.ndarray:
         """
         Finds the beats from the signal.
         Returns: Times at which the beats occur.
@@ -203,7 +203,20 @@ class Threshold(ECGDetectionAlgorithm):
         beat_time_list = np.take(self.time, tuple(beat_ind))
         return np.array(beat_time_list)
 
-    def apply_threshold(self, signal=None, background=None, abs_signal=False, reverse_threshold=False):
+    def _find_indices(self, values, func) -> list:
+        """
+        Finds indices of an array given parameters.
+        Args:
+            values: list of values
+            func: lambda function
+
+        Returns: list of indices
+
+        """
+        return [i for (i, val) in enumerate(values) if func(val)]
+
+    def apply_threshold(self, signal=None, background=None,
+                        abs_signal=False, reverse_threshold=False) -> np.ndarray:
         """
         Applies a threshold of a certain percentage.
         Args:
@@ -239,7 +252,8 @@ class Threshold(ECGDetectionAlgorithm):
             bin_sig = signal >= self.threshold
         return bin_sig
 
-    def _find_threshold(self, signal, background=None, filter_bg: bool = True, reverse_threshold=False):
+    def _find_threshold(self, signal, background=None,
+                        filter_bg: bool = True, reverse_threshold=False) -> tuple:
         """
         Determines threshold based on a absolute-value-filtered/zeroed signal and proportion.
         Threshold is padded by one period. Note: abs value isn't used because of double/triple counting.
@@ -294,7 +308,7 @@ class Threshold(ECGDetectionAlgorithm):
 
         return threshold_array, is_negative
 
-    def _find_num_pm(self, signal):
+    def _find_num_pm(self, signal) -> tuple:
         """
         Finds the number of values above and below axis.
         Args:
@@ -310,7 +324,7 @@ class Threshold(ECGDetectionAlgorithm):
         neg = signal[np.where(signal < 0)]
         return len(pos), len(neg)
 
-    def find_mean_hr_bpm(self, time_interval=None):
+    def find_mean_hr_bpm(self, time_interval=None) -> float:
         """
         Finds the mean heart rate beats per minute for signal.
         Args:
@@ -406,19 +420,7 @@ class Threshold(ECGDetectionAlgorithm):
         plt.show()
         plt.close()
 
-    def _find_indices(self, values, func):
-        """
-        Finds indices of an array given parameters.
-        Args:
-            values: list of values
-            func: lambda function
-
-        Returns: list of indices
-
-        """
-        return [i for (i, val) in enumerate(values) if func(val)]
-
-    def _find_binary_centers(self, bin_signal, min_width: int = 1):
+    def _find_binary_centers(self, bin_signal, min_width: int = 1) -> np.ndarray:
         # first make sure that this is a binary signal
         """
         Finds the centers of the thresholded binary signal.
@@ -461,7 +463,7 @@ class Threshold(ECGDetectionAlgorithm):
                 ecg_center_peaks.append(0)
         return np.array(ecg_center_peaks)
 
-    def _find_rising_edges(self, bin_signal):
+    def _find_rising_edges(self, bin_signal) -> np.ndarray:
         """
         Finds the rising edge of a binary signal.
         Args:
@@ -493,7 +495,7 @@ class Threshold(ECGDetectionAlgorithm):
 
         return np.array(rising_edges)
 
-    def _find_falling_edges(self, bin_signal):
+    def _find_falling_edges(self, bin_signal) -> np.ndarray:
         """
         Finds the falling edge of a binary signal.
         Args:
@@ -517,13 +519,13 @@ class Threshold(ECGDetectionAlgorithm):
                     previous_val = 1
             elif previous_val == 1 and val == 0:
                 previous_val = 0
-                falling_edges.append(i-1)
+                falling_edges.append(i - 1)
             elif val == 1:
                 previous_val = 1
 
         return np.array(falling_edges)
 
-    def _confirm_binary(self, signal):
+    def _confirm_binary(self, signal) -> bool:
         """
         Tests of the signal is a binary signal of 0s and 1s
         Args:
@@ -543,7 +545,7 @@ class Wavelet(Threshold):
         self.signal_cwt = None
         self.threshold_frac = kwargs.get('threshold_frac', .5)
 
-    def find_beats(self, reverse_threshold=False):
+    def find_beats(self, reverse_threshold=False) -> np.ndarray:
         """
         Finds the beats from the signal using a continuous wavelet transform.
         Returns: Times at which the beats occur.
@@ -579,7 +581,7 @@ class Wavelet(Threshold):
         beat_time_list = np.take(self.time, tuple(beat_ind))
         return np.array(beat_time_list)
 
-    def _wavelet_transform(self):
+    def _wavelet_transform(self) -> np.ndarray:
         # limit to the average detected period the signal
         self.widths_cwt = np.arange(1, 6)
         self.signal_cwt_img = sp.cwt(self.raw_signal, sp.ricker, self.widths_cwt)
