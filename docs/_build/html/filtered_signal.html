@@ -1,0 +1,259 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>filtered_signal module &mdash; Heart Rate Monitor v1.0.1 documentation</title>
+    
+    <link rel="stylesheet" href="_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    './',
+        VERSION:     'v1.0.1',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <link rel="top" title="Heart Rate Monitor v1.0.1 documentation" href="index.html" />
+   
+  <link rel="stylesheet" href="_static/custom.css" type="text/css" />
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head>
+  <body role="document">
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="module-filtered_signal">
+<span id="filtered-signal-module"></span><h1>filtered_signal module<a class="headerlink" href="#module-filtered_signal" title="Permalink to this headline">¶</a></h1>
+<dl class="class">
+<dt id="filtered_signal.FilteredSignal">
+<em class="property">class </em><code class="descclassname">filtered_signal.</code><code class="descname">FilteredSignal</code><span class="sig-paren">(</span><em>time</em>, <em>signal</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="headerlink" href="#filtered_signal.FilteredSignal" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">object</span></code></p>
+<dl class="method">
+<dt id="filtered_signal.FilteredSignal.apply_high_pass">
+<code class="descname">apply_high_pass</code><span class="sig-paren">(</span><em>signal=None</em>, <em>high_cutoff: int=None</em>, <em>order: int=1</em>, <em>fs=None</em><span class="sig-paren">)</span> &rarr; numpy.ndarray<a class="headerlink" href="#filtered_signal.FilteredSignal.apply_high_pass" title="Permalink to this definition">¶</a></dt>
+<dd><p>Applies a high-pass filter.
+:param fs: Sampling frequency
+:type fs: float
+:param signal: Signal to high-pass
+:type signal: numpy.ndarray
+:param high_cutoff: Cutoff frequency in Hz
+:type high_cutoff: int
+:param order: Order of the filter</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">High-passed signal.</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body">numpy.ndarray</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="filtered_signal.FilteredSignal.apply_low_pass">
+<code class="descname">apply_low_pass</code><span class="sig-paren">(</span><em>signal=None</em>, <em>low_cutoff: int=None</em>, <em>order: int=1</em>, <em>fs=None</em><span class="sig-paren">)</span> &rarr; numpy.ndarray<a class="headerlink" href="#filtered_signal.FilteredSignal.apply_low_pass" title="Permalink to this definition">¶</a></dt>
+<dd><p>Applies a low-pass filter.
+:param fs: Sampling frequency
+:type fs: float
+:param signal: Signal to low-pass
+:param low_cutoff: Cutoff frequency in Hz
+:param order: Order of the filter</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">Low-passed signal.</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body">numpy.array</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="filtered_signal.FilteredSignal.apply_moving_average_sub">
+<code class="descname">apply_moving_average_sub</code><span class="sig-paren">(</span><em>signal=None</em><span class="sig-paren">)</span> &rarr; numpy.ndarray<a class="headerlink" href="#filtered_signal.FilteredSignal.apply_moving_average_sub" title="Permalink to this definition">¶</a></dt>
+<dd><p>Applies a moving average filter and subtracts it from the signal.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>signal</strong> &#8211; Signal to apply moving average background subtraction.</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">Signal with moving average subtracted.</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body">np.ndarray</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="filtered_signal.FilteredSignal.apply_noise_reduction">
+<code class="descname">apply_noise_reduction</code><span class="sig-paren">(</span><em>signal=None</em>, <em>low_pass_cutoff=None</em>, <em>high_pass_cutoff=None</em><span class="sig-paren">)</span> &rarr; numpy.ndarray<a class="headerlink" href="#filtered_signal.FilteredSignal.apply_noise_reduction" title="Permalink to this definition">¶</a></dt>
+<dd><p>Applies a bandpass filter determined by some frequency analysis.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>signal</strong> &#8211; Signal to apply noise reduction to.</li>
+<li><strong>low_pass_cutoff</strong> (<em>int</em>) &#8211; Low-pass filter cut-off.</li>
+<li><strong>high_pass_cutoff</strong> (<em>int</em>) &#8211; High-pass filter cut-off.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">Background subtracted and filtered signal.</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">numpy.array</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="filtered_signal.FilteredSignal.clean_signal">
+<code class="descname">clean_signal</code><span class="sig-paren">(</span><em>filter_sig: bool=True</em><span class="sig-paren">)</span> &rarr; numpy.ndarray<a class="headerlink" href="#filtered_signal.FilteredSignal.clean_signal" title="Permalink to this definition">¶</a></dt>
+<dd><p>Applies a moving average subtraction to get rid of global drift and noise reduction filters.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>filter_sig</strong> (<em>bool</em>) &#8211; Whether or not to filter the signal.</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">Filtered signal</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body">numpy.ndarray</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="filtered_signal.FilteredSignal.determine_frequency">
+<code class="descname">determine_frequency</code><span class="sig-paren">(</span><em>time=None</em><span class="sig-paren">)</span> &rarr; float<a class="headerlink" href="#filtered_signal.FilteredSignal.determine_frequency" title="Permalink to this definition">¶</a></dt>
+<dd><p>Determines the frequencies with a time array.
+:param time: an array of times which correspond to the signal</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">frequency of the signal</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body">float</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="filtered_signal.FilteredSignal.get_fft">
+<code class="descname">get_fft</code><span class="sig-paren">(</span><em>signal=None</em>, <em>is_filtered: bool=False</em><span class="sig-paren">)</span> &rarr; tuple<a class="headerlink" href="#filtered_signal.FilteredSignal.get_fft" title="Permalink to this definition">¶</a></dt>
+<dd><p>Gets FFT of a signal
+:param signal: Signal to fft. Defaults to signal that was read in at instantiation.
+:type signal: numpy.ndarray
+:param is_filtered: Use the filtered signal or raw signal.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">first element is frequency numpy.ndarray and second is fft numpy.ndarray .</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body">tuple</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="filtered_signal.FilteredSignal.get_properties">
+<code class="descname">get_properties</code><span class="sig-paren">(</span><span class="sig-paren">)</span> &rarr; dict<a class="headerlink" href="#filtered_signal.FilteredSignal.get_properties" title="Permalink to this definition">¶</a></dt>
+<dd><p>Gets some signal properties. Nothing directly related to the signal is returned.
+:returns: properties of the filtered signal.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body">dict</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper"><div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="index.html">Documentation overview</a><ul>
+  </ul></li>
+</ul>
+</div>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="_sources/filtered_signal.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2018, Stephen Xu.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.3.1</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.8</a>
+      
+      |
+      <a href="_sources/filtered_signal.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+
+    
+  </body>
+</html>
