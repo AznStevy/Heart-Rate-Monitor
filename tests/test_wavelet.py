@@ -91,3 +91,16 @@ def test_wavelet_find_beats_bad_inputs(WaveletObj_21, reverse_threshold, error):
 def test_wavelet_find_beats_output_type(WaveletObj_21):
     resp = WaveletObj_21.find_beats()
     assert type(resp) == np.ndarray
+
+
+# ----------------- test wavelet _wavelet_transform ---------------------
+def test_wavelet__wavelet_transform(WaveletObj_21):
+    # I trust that numpy checks that it does what it's supposed to.
+    resp = WaveletObj_21._wavelet_transform()
+    assert resp.size != 0
+
+
+def test_wavelet__wavelet_transform_output_type(WaveletObj_21):
+    # I trust that numpy checks that it does what it's supposed to.
+    resp = WaveletObj_21._wavelet_transform()
+    assert type(resp) == np.ndarray
