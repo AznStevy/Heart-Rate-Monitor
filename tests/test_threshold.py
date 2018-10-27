@@ -185,6 +185,28 @@ def test_threshold_find_num_beats_output(ThresholdObj_21):
     assert type(ThresholdObj_21.find_num_beats()) == int
 
 
+# ----------- test _find_nearest_index --------------
+@pytest.mark.parametrize("data_list, value, expected", [
+    ([1, 2, 3], 3, 2),
+    (range(10), 3, 2),
+    (np.arange(10), 3, 2),
+    ([1.1, 2.2, 3.3], 3, 2),
+])
+def test_threshold__find_nearest_index(ThresholdObj_21, data_list, value, expected):
+    assert ThresholdObj_21._find_nearest_index(data_list, value) == expected
+
+
+@pytest.mark.parametrize("data_list, value", [
+    ([1, 2, 3], 3),
+    (range(10), 3),
+    (np.arange(10), 3),
+    ([1.1, 2.2, 3.3], 3),
+])
+def test_threshold__find_nearest_index(ThresholdObj_21, data_list, value):
+    resp_type = type(ThresholdObj_21._find_nearest_index(data_list, value))
+    assert resp_type == int or resp_type == np.int64
+
+
 # ----------- test find_mean_hr_bpm --------------
 def test_threshold_find_mean_hr_bpm(ThresholdObj_21, test_21_data):
     assert abs(ThresholdObj_21.find_mean_hr_bpm() - test_21_data["mean_hr_bpm"]) < 5
@@ -234,3 +256,94 @@ def test_threshold_apply_threshold_bad_inputs(ThresholdObj_1,
 
 def test_threshold_apply_threshold_output_type(ThresholdObj_21):
     assert type(ThresholdObj_21.apply_threshold()) == np.ndarray
+
+
+# ----------------- test threshold _find_threshold -----------------
+@pytest.mark.parametrize("signal, background, expected", [
+    ([1, 2, 3], [0, 0, 0], (np.array([3, 3, 3]), False)), ])
+def test_threshold__find_threshold(ThresholdObj_21, signal, background, expected):
+    resp_thresh, is_neg = ThresholdObj_21._find_threshold(signal, background, filter_bg=False)
+
+    assert np.array_equal(resp_thresh, expected[0]) and is_neg == expected[1]
+
+
+@pytest.mark.parametrize("signal, background", [
+    ([1, 2, 3], [0, 0, 0]), ])
+def test_threshold__find_threshold_output(ThresholdObj_21, signal, background):
+    resp = ThresholdObj_21._find_threshold(signal, background, filter_bg=False)
+    assert type(resp) == tuple and \
+           type(resp[0]) == list and \
+           type(resp[1]) == bool
+
+
+# ----------------- test threshold _find_num_pm -----------------
+@pytest.mark.parametrize("signal, expected", [
+    ([-1, -2, 3], (1, 2)),
+    ([-1.1, -2.2, 3], (1, 2)),
+    (np.array([-1.1, -2.2, 3]), (1, 2)),
+])
+def test_threshold__find_num_pm(ThresholdObj_21, signal, expected):
+    assert ThresholdObj_21._find_num_pm(signal) == expected
+
+
+@pytest.mark.parametrize("signal, background", [
+    ([1, 2, 3], [0, 0, 0]), ])
+def test_threshold__find_num_pm(ThresholdObj_21, signal, background):
+    resp = ThresholdObj_21._find_num_pm(signal)
+    assert type(resp) == tuple and len(resp) == 2 and type(resp[0]) == int and type(resp[1]) == int
+
+
+# ----------------- test threshold _find_indices -----------------
+@pytest.mark.parametrize("values, func, expected", [
+    ([0, 1, 0], lambda x: x == 1, [1]),
+    ([0, 1, 0, 1], lambda x: x == 1, [1, 3]),
+    ([0, 1, 1, 3], lambda x: x == 1, [1, 2]),
+    ([0, 1, "1", 3], lambda x: x == 1, [1]),
+])
+def test_threshold__find_indices(ThresholdObj_21, values, func, expected):
+    resp = ThresholdObj_21._find_indices(values, func)
+    assert resp == expected
+
+
+# ----------------- test threshold _find_binary_centers -----------------
+@pytest.mark.parametrize("bin_signal, min_width, expected", [
+    ([0, 1, 1, 1, 0], 1, [0, 0, 1, 0, 0]),
+    ([0, 1, 1, 1, 0, 0, 1, 1, 1, 0], 1, [0, 0, 1, 0, 0, 0, 0, 1, 0, 0]),
+])
+def test_threshold__find_binary_centers(ThresholdObj_21, bin_signal, min_width, expected):
+    resp = ThresholdObj_21._find_binary_centers(bin_signal, min_width)
+    assert np.array_equal(resp, expected)
+
+
+# ----------------- test threshold _find_rising_edges -----------------
+@pytest.mark.parametrize("bin_signal, expected", [
+    ([0, 1, 1, 1, 0], [1]),
+    ([0, 1, 1, 1, 0, 0, 1, 1, 1, 0], [1, 6]),
+])
+def test_threshold__find_rising_edges(ThresholdObj_21, bin_signal, expected):
+    resp = ThresholdObj_21._find_rising_edges(bin_signal)
+    assert np.array_equal(resp, expected)
+
+
+# ----------------- test threshold _find_falling_edges -----------------
+@pytest.mark.parametrize("bin_signal, expected", [
+    ([0, 1, 1, 1, 0], [3]),
+    ([0, 1, 1, 1, 0, 0, 1, 1, 1, 0], [3, 8]),
+])
+def test_threshold__find_falling_edges(ThresholdObj_21, bin_signal, expected):
+    resp = ThresholdObj_21._find_falling_edges(bin_signal)
+    assert np.array_equal(resp, expected)
+
+
+# ----------------- test threshold _confirm_binary -----------------
+@pytest.mark.parametrize("signal, expected", [
+    ([0, 1, 1, 1, 0], True),
+    ([0, 1, 1, 1, 0, 0, 1, 1, 1, 0], True),
+    (np.array([0, 1, 1, 1, 0]), True),
+    (np.array([0, 1, 1, 1, 0, 0, 1, 1, 1, 0]), True),
+    ([0, 1, 3, 1, 0], False),
+    ([0, 1, 3, 1, "0"], False),
+])
+def test_threshold__confirm_binary(ThresholdObj_21, signal, expected):
+    resp = ThresholdObj_21._confirm_binary(signal)
+    assert resp == expected
