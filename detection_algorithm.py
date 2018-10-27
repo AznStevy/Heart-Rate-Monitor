@@ -33,6 +33,9 @@ class ECGDetectionAlgorithm(object):
     def start_analysis(self, time_interval=None):
         """
         Begins the analysis to get necessary return parameters
+
+        Args:
+            time_interval(tuple): Time interval to analyze for mean_hr_bpm in minutes.
         """
         logging.info("Beginning heartbeat analysis.")
         self.duration = self.find_duration()
@@ -54,6 +57,9 @@ class ECGDetectionAlgorithm(object):
         """
         Finds the voltage extremes from the original signal.
 
+        Returns:
+            tuple: Returns min and max as floats of raw signal in form (min, max).
+
         """
         logging.info("find_voltage_extremes called")
         try:
@@ -65,9 +71,10 @@ class ECGDetectionAlgorithm(object):
         """
         Finds the voltage extremes from a given signal.
         Args:
-            signal: Finds extremes of that signal
+            signal (numpy.ndarray): Finds extremes of that signal
 
-        Returns: Minimum and maximum values of the signal
+        Returns:
+            tuple: Minimum and maximum values of the signal.
 
         """
         if type(signal) != list and type(signal) != np.ndarray:
@@ -83,7 +90,9 @@ class ECGDetectionAlgorithm(object):
     def find_duration(self) -> float:
         """
         Finds total duration of the signal.
-        Returns: Duration in seconds.
+
+        Returns:
+            float: Duration in seconds.
 
         """
         logging.info("find_duration called")
@@ -93,7 +102,9 @@ class ECGDetectionAlgorithm(object):
     def find_num_beats(self) -> int:
         """
         Finds number of beats in the signal.
-        Returns: number of beats
+
+        Returns:
+            int: number of beats
 
         """
         logging.info("find_num_beats called")
@@ -105,8 +116,8 @@ class ECGDetectionAlgorithm(object):
         """
         Finds the index which is nearest to the value.
         Args:
-            array: The array in which to find the value
-            value: Value in question.
+            array (numpy.ndarray): The array in which to find the value
+            value (float): Value in question.
 
         Returns:
             int: Nearest index to the value.
@@ -118,14 +129,32 @@ class ECGDetectionAlgorithm(object):
 
     @abstractmethod
     def find_mean_hr_bpm(self, time_interval=None) -> float:
+        """
+        Abstract method that finds mean hr bpm which must be implemented.
+        Args:
+            time_interval (tuple): time interval to analyze in minutes.
+
+        Returns:
+            float: The mean hr bpm in that minute time-frame.
+
+        """
         pass
 
     @abstractmethod
     def find_beats(self) -> np.ndarray:
+        """
+        Abstract method that finds beat times which must be implemented.
+        Returns:
+            numpy.ndarray: Beat times.
+
+        """
         pass
 
     @abstractmethod
     def plot_graph(self):
+        """
+        Abstract method that provides visualization of the analysis which must be implemented.
+        """
         pass
 
 
@@ -174,7 +203,9 @@ class Threshold(ECGDetectionAlgorithm):
     def find_beats(self) -> np.ndarray:
         """
         Finds the beats from the signal.
-        Returns: Times at which the beats occur.
+
+        Returns:
+            numpy.ndarray: Times at which the beats occur.
 
         """
         self.binary_signal = self.apply_threshold(self.filtered_signal, self.background)
@@ -207,10 +238,11 @@ class Threshold(ECGDetectionAlgorithm):
         """
         Finds indices of an array given parameters.
         Args:
-            values: list of values
+            values (numpy.ndarray): list of values
             func: lambda function
 
-        Returns: list of indices
+        Returns:
+            list: list of indices that fit the lambda function.
 
         """
         return [i for (i, val) in enumerate(values) if func(val)]
@@ -220,12 +252,13 @@ class Threshold(ECGDetectionAlgorithm):
         """
         Applies a threshold of a certain percentage.
         Args:
-            reverse_threshold: Reverse threshold from what it should be.
-            background: Supply a background signal to consider.
-            abs_signal: Whether or not to threshold with absolute values.
-            signal: Filtered signal in numpy array
+            reverse_threshold (bool): Reverse threshold from what it should be.
+            background (numpy.ndarray): Supply a background signal to consider.
+            abs_signal (bool): Whether or not to threshold with absolute values.
+            signal (numpy.ndarray): Filtered signal in numpy array.
 
-        Returns: list of binary values based on threshold.
+        Returns:
+            numpy.ndarray: list of binary values based on threshold.
 
         """
         logging.info("THRESHOLD apply_threshold called")
@@ -260,10 +293,11 @@ class Threshold(ECGDetectionAlgorithm):
         Args:
             reverse_threshold (bool): Reverse threshold of what it should be in terms of positive or negative.
             filter_bg (bool): Whether or not to filter the background.
-            background (object): background for the signal
-            signal: heart beat signal
+            background (numpy.ndarray): background for the signal.
+            signal (numpy.ndarray): Heart beat signal.
 
-        Returns: Threshold array
+        Returns:
+            tuple: First is a numpy.ndarray threshold array and second is bool if threshold is negative.
 
         """
         if filter_bg and background is not None:
@@ -313,9 +347,9 @@ class Threshold(ECGDetectionAlgorithm):
         Finds the number of values above and below axis.
         Args:
             signal: Signal in question.
-            num: Number to use as the baseline.
 
         Returns:
+            tuple: First is number of positive, second is number of negative elements.
 
         """
         signal = np.array(signal)
@@ -330,7 +364,8 @@ class Threshold(ECGDetectionAlgorithm):
         Args:
             time_interval (tuple): Interval in minutes of the signal to find mean hr bpm.
 
-        Returns: mean heart rate bpm within the designated time interval.
+        Returns:
+            float: mean heart rate bpm within the designated time interval.
 
         """
         logging.info("find_mean_hr_bpm called")
@@ -378,9 +413,10 @@ class Threshold(ECGDetectionAlgorithm):
 
     def plot_graph(self, file_path: str = None):
         """
-        Plots a graph of relevant information for the threshold algorithm.
+        Plots a graph of thresholding and frequency information for the threshold algorithm.
         Args:
             file_path: The path of the file to output.
+
         """
         logging.info("THRESHOLD plot_graph called")
         fig = plt.figure(figsize=(10, 6))
@@ -426,9 +462,10 @@ class Threshold(ECGDetectionAlgorithm):
         Finds the centers of the thresholded binary signal.
         Args:
             min_width (int): Minimum width for binary signal.
-            bin_signal: binary signal
+            bin_signal (numpy.ndarray): binary signal
 
-        Returns: list of binary values representing the centers of the binary steps.
+        Returns:
+            numpy.ndarray: List of binary values representing the centers of the binary steps.
 
         """
         if min_width < 1:
@@ -467,10 +504,10 @@ class Threshold(ECGDetectionAlgorithm):
         """
         Finds the rising edge of a binary signal.
         Args:
-            bin_signal: binary signal
+            bin_signal (numpy.ndarray): binary signal
 
         Returns:
-            numpy.array: list of binary values representing the rising edge
+            numpy.array: Indices at which a rising edge occurs.
 
         """
         is_binary = self._confirm_binary(bin_signal)
@@ -499,10 +536,10 @@ class Threshold(ECGDetectionAlgorithm):
         """
         Finds the falling edge of a binary signal.
         Args:
-            bin_signal: binary signal
+            bin_signal (numpy.ndarray): binary signal
 
         Returns:
-            numpy.array: list of binary values representing the rising edge
+            numpy.array: Indices at which a falling edge occurs.
 
         """
         is_binary = self._confirm_binary(bin_signal)
@@ -529,9 +566,10 @@ class Threshold(ECGDetectionAlgorithm):
         """
         Tests of the signal is a binary signal of 0s and 1s
         Args:
-            signal: signal to test
+            signal (numpy.ndarray): signal to test
 
-        Returns: boolean of if it is a binary signal
+        Returns:
+            bool: Whether or not signal is a binary signal
 
         """
         signal = np.array(signal)
@@ -545,10 +583,14 @@ class Wavelet(Threshold):
         self.signal_cwt = None
         self.threshold_frac = kwargs.get('threshold_frac', .5)
 
-    def find_beats(self, reverse_threshold=False) -> np.ndarray:
+    def find_beats(self, reverse_threshold: bool = False) -> np.ndarray:
         """
         Finds the beats from the signal using a continuous wavelet transform.
-        Returns: Times at which the beats occur.
+        Args:
+            reverse_threshold (bool): Whether or not to reverse the automatic threshold.
+
+        Returns:
+            numpy.ndarray: Times at which the beats occur.
         """
 
         if type(reverse_threshold) != bool:
@@ -583,15 +625,22 @@ class Wavelet(Threshold):
 
     def _wavelet_transform(self) -> np.ndarray:
         # limit to the average detected period the signal
+        """
+        Takes a wavelet transform of the object's signal and then averages along the width dimension.
+        Returns:
+            numpy.ndarray: Averaged wavelet transform.
+
+        """
         self.widths_cwt = np.arange(1, 6)
         self.signal_cwt_img = sp.cwt(self.raw_signal, sp.ricker, self.widths_cwt)
         return np.average(self.signal_cwt_img, axis=0)
 
     def plot_graph(self, file_path: str = None):
         """
-        Plots a graph of relevant information for the threshold algorithm.
+        Plots a graph of relevant information for the wavelet algorithm.
         Args:
-            file_path: The path of the file to output.
+            file_path (str): The path of the file to output.
+
         """
 
         fig = plt.figure(figsize=(10, 6))

@@ -38,7 +38,7 @@ class FilteredSignal(object):
         self.fs = self.determine_frequency(self.time)
         self.filtered_signal = self.clean_signal(filter_sig=filter_sig)
 
-    def get_properties(self):
+    def get_properties(self) -> dict:
         """
         Gets some signal properties. Nothing directly related to the signal is returned.
         Returns:
@@ -53,7 +53,7 @@ class FilteredSignal(object):
         }
         return info
 
-    def _check_list_input(self, test_list):
+    def _check_list_input(self, test_list) -> np.ndarray:
         """
         Checks if all elements are valid.
         Args:
@@ -72,11 +72,11 @@ class FilteredSignal(object):
 
         return np.array(test_list)
 
-    def _is_numeric_list(self, list):
+    def _is_numeric_list(self, list) -> bool:
         """
         Tests if the list contains all numeric values.
         Args:
-            list: list or numpy array.
+            list (numpy.ndarray): list or numpy array.
 
         Returns:
             bool: Whether all values are numeric.
@@ -85,7 +85,7 @@ class FilteredSignal(object):
         bool_list = np.isreal(list)
         return np.all(bool_list)
 
-    def clean_signal(self, filter_sig: bool = True):
+    def clean_signal(self, filter_sig: bool = True) -> np.ndarray:
         """
         Applies a moving average subtraction to get rid of global drift and noise reduction filters.
 
@@ -93,7 +93,7 @@ class FilteredSignal(object):
             filter_sig (bool): Whether or not to filter the signal.
 
         Returns:
-            numpy.array: Filtered signal
+            numpy.ndarray: Filtered signal
         """
         try:
             self.bg_sub_signal = self.apply_moving_average_sub(self.raw_signal)
@@ -121,12 +121,15 @@ class FilteredSignal(object):
         else:
             return self.bg_sub_signal
 
-    def apply_moving_average_sub(self, signal=None):
+    def apply_moving_average_sub(self, signal=None) -> np.ndarray:
         """
         Applies a moving average filter and subtracts it from the signal.
 
         Args:
             signal: Signal to apply moving average background subtraction.
+
+        Returns:
+            np.ndarray: Signal with moving average subtracted.
         """
         if signal is None:
             signal = self.raw_signal
@@ -147,7 +150,7 @@ class FilteredSignal(object):
 
         return signal - mov_avg
 
-    def apply_noise_reduction(self, signal=None, low_pass_cutoff=None, high_pass_cutoff=None):
+    def apply_noise_reduction(self, signal=None, low_pass_cutoff=None, high_pass_cutoff=None) -> np.ndarray:
         """
         Applies a bandpass filter determined by some frequency analysis.
 
@@ -180,17 +183,17 @@ class FilteredSignal(object):
             logging.exception(e)
             return signal
 
-    def apply_high_pass(self, signal=None, high_cutoff: int = None, order: int = 1, fs=None):
+    def apply_high_pass(self, signal=None, high_cutoff: int = None, order: int = 1, fs=None) -> np.ndarray:
         """
         Applies a high-pass filter.
         Args:
             fs (float): Sampling frequency
-            signal: Signal to high-pass
+            signal (numpy.ndarray): Signal to high-pass
             high_cutoff (int): Cutoff frequency in Hz
-            order: Order of the filter
+            order (int): Order of the filter
 
         Returns:
-            numpy.array: High-passed signal.
+            numpy.ndarray: High-passed signal.
         """
 
         if signal is not None:
@@ -225,7 +228,7 @@ class FilteredSignal(object):
             raise ValueError("Failed to high-pass filter.")
         return filtered_signal
 
-    def apply_low_pass(self, signal=None, low_cutoff: int = None, order: int = 1, fs=None):
+    def apply_low_pass(self, signal=None, low_cutoff: int = None, order: int = 1, fs=None) -> np.ndarray:
         """
         Applies a low-pass filter.
         Args:
@@ -269,13 +272,15 @@ class FilteredSignal(object):
             raise ValueError("Failed to low-pass filter.")
         return filtered_signal
 
-    def determine_frequency(self, time=None):
+    def determine_frequency(self, time=None) -> float:
         """
         Determines the frequencies with a time array.
         Args:
             time: an array of times which correspond to the signal
 
-        Returns: frequency of the signal
+        Returns:
+            float: frequency of the signal
+
         """
         if time is None:
             time = self.time
@@ -290,15 +295,15 @@ class FilteredSignal(object):
         logging.info("Determining frequency using mode of time deltas.")
         return float(1 / stats.mode(periods, axis=None)[0])
 
-    def get_fft(self, signal=None, is_filtered: bool = False):
+    def get_fft(self, signal=None, is_filtered: bool = False) -> tuple:
         """
         Gets FFT of a signal
         Args:
-            signal: Signal to fft. Defaults to signal that was read in at instantiation.
-            is_filtered: Use the filtered signal or raw signal.
+            signal (numpy.ndarray): Signal to fft. Defaults to signal that was read in at instantiation.
+            is_filtered (bool): Use the filtered signal or raw signal.
 
         Returns:
-            tuple: frequency and fft.
+            tuple: first element is frequency numpy.ndarray and second is fft numpy.ndarray .
 
         """
         if signal is not None:
