@@ -256,11 +256,18 @@ class Threshold(ECGDetectionAlgorithm):
             background = self.filtered_signal_obj.apply_noise_reduction(
                 background, self.low_cutoff + 10, max(0, self.high_cutoff - 5))
 
-        padding = self.filtered_signal_obj.period
-        start_ind = padding
-        end_ind = len(self.filtered_signal) - padding
-        padded_signal = signal[start_ind:end_ind]
-        min_v, max_v = self._find_voltage_extremes(padded_signal)
+        try:
+            padding = self.filtered_signal_obj.period
+            if padding:
+                start_ind = padding
+                end_ind = len(self.filtered_signal) - padding
+                padded_signal = signal[start_ind:end_ind]
+                min_v, max_v = self._find_voltage_extremes(padded_signal)
+            else:
+                min_v, max_v = self._find_voltage_extremes(signal)
+        except ValueError as e:
+            logging.exception(e)
+            min_v, max_v = self._find_voltage_extremes(signal)
 
         if reverse_threshold:
             if abs(min_v) < abs(max_v):
@@ -411,7 +418,7 @@ class Threshold(ECGDetectionAlgorithm):
         """
         return [i for (i, val) in enumerate(values) if func(val)]
 
-    def _find_binary_centers(self, bin_signal, min_width=1):
+    def _find_binary_centers(self, bin_signal, min_width: int = 1):
         # first make sure that this is a binary signal
         """
         Finds the centers of the thresholded binary signal.
@@ -422,6 +429,9 @@ class Threshold(ECGDetectionAlgorithm):
         Returns: list of binary values representing the centers of the binary steps.
 
         """
+        if min_width < 1:
+            raise ValueError("min_width must be int greater than 0.")
+
         try:
             self.rising_edges = self._find_rising_edges(bin_signal)
             self.falling_edges = self._find_falling_edges(bin_signal)
@@ -507,7 +517,7 @@ class Threshold(ECGDetectionAlgorithm):
                     previous_val = 1
             elif previous_val == 1 and val == 0:
                 previous_val = 0
-                falling_edges.append(i)
+                falling_edges.append(i-1)
             elif val == 1:
                 previous_val = 1
 
@@ -522,6 +532,7 @@ class Threshold(ECGDetectionAlgorithm):
         Returns: boolean of if it is a binary signal
 
         """
+        signal = np.array(signal)
         return np.array_equal(signal, signal.astype(bool))
 
 

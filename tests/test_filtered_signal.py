@@ -170,6 +170,41 @@ def test_get_properties_output(test_1_filtered_signal_obj):
     assert set(output.keys()).issubset(required)
 
 
+# ----------------- check _check_list_input --------------------------
+@pytest.mark.parametrize("test_list", [
+    [1, 2, 3],
+    np.array([1, 2, 3]),
+])
+def test__check_list_input(test_1_filtered_signal_obj, test_list):
+    test_1_filtered_signal_obj._check_list_input(test_list)
+
+
+@pytest.mark.parametrize("test_list, error", [
+    ((1, 2, 3), TypeError),
+    ("test", TypeError),
+    (["1", 2, 3], ValueError),
+])
+def test__check_list_input_bad(test_1_filtered_signal_obj, test_list, error):
+    with pytest.raises(error):
+        test_1_filtered_signal_obj._check_list_input(test_list)
+
+
+# ----------------- check _is_numeric_list --------------------------
+@pytest.mark.parametrize("test_list", [
+    (["1", 2, 3], False),
+    (np.array([1, 2, 3]), True),
+    (np.array(["1", 2, 3]), False),
+    (np.array([np.nan, 2, 3]), False)
+])
+def test__is_numeric_list_input(test_1_filtered_signal_obj, test_list):
+    assert test_1_filtered_signal_obj._is_numeric_list(test_list)
+
+
+# ----------------- check clean_signal --------------------------
+def test_clean_signal_output(test_1_filtered_signal_obj):
+    assert type(test_1_filtered_signal_obj.clean_signal()) == np.ndarray
+
+
 # ----------------- check moving_average_sub -------------------------
 def test_apply_moving_average_sub(test_1_filtered_signal_obj):
     """Testing moving average."""
