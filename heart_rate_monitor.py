@@ -24,7 +24,7 @@ class HeartRateMonitor(object):
         time_interval = kwargs.get('time_interval', None)
         self.analyzer.start_analysis(time_interval=time_interval)
 
-    def to_json(self):
+    def to_json(self) -> dict:
         """
         Converts relevant properties into a json/dict object.
         Returns: json object of relevant properties.
@@ -40,7 +40,7 @@ class HeartRateMonitor(object):
         }
         return dict_obj
 
-    def write_json(self):
+    def write_json(self) -> str:
         """
         Writes json to a file called the same base name with .json extension.
         """
@@ -73,7 +73,7 @@ def main():
         metrics = heart_rate_monitor.to_json()
         heart_rate_monitor.analyzer.plot_graph()
         heart_rate_monitor.write_json()
-        print(num, metrics["mean_hr_bpm"], metrics["beats"])
+        print(num, metrics)
 
 
 if __name__ == "__main__":

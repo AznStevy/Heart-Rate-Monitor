@@ -17,7 +17,7 @@ class FileHandler(object):
         if initialize:
             self.read_data()
 
-    def get_folder_path(self, filename: str = None):
+    def get_folder_path(self, filename: str = None) -> str:
         """
         Gets file path without file from project root directory.
         Args:
@@ -35,7 +35,7 @@ class FileHandler(object):
         folder_path = os.path.dirname(os.path.abspath(filename))
         return folder_path.replace(current_directory, "").replace("\\", "/")
 
-    def get_basename(self, filename: str = None):
+    def get_basename(self, filename: str = None) -> str:
         """
         Gets filename without extension.
         Args:
@@ -52,7 +52,7 @@ class FileHandler(object):
         base = os.path.basename(filename)
         return str(os.path.splitext(base)[0])
 
-    def get_ext(self, filename: str = None):
+    def get_ext(self, filename: str = None) -> str:
         """
         Gets file extension
         Args:
@@ -69,7 +69,7 @@ class FileHandler(object):
         _, file_extension = os.path.splitext(filename)
         return file_extension
 
-    def read_data(self, filename: str = None):
+    def read_data(self, filename: str = None) -> tuple:
         """
         Reads in data from specified file.
 
@@ -95,7 +95,7 @@ class FileHandler(object):
         else:
             raise FileNotFoundError("That file does not exist.")
 
-    def _verify_data(self, filename):
+    def _verify_data(self, filename) -> np.ndarray:
         """
         Verifies data by ensuring dimensions and data is numeric
         Args:
@@ -115,7 +115,7 @@ class FileHandler(object):
 
         return csv_data
 
-    def _verify_values(self, data):
+    def _verify_values(self, data) -> np.ndarray:
         """
         Gets rid of elements that are NaN.
         Args:
@@ -132,7 +132,7 @@ class FileHandler(object):
             logging.warning("NaN elements from numpy.ndarray removed.")
         return fixed_data
 
-    def _verify_dimensions(self, data):
+    def _verify_dimensions(self, data) -> np.ndarray:
         """
         Determines if the data is in the correct dimension.
         Args:
