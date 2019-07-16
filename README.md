@@ -1,5 +1,5 @@
 # bme590hrm
-[![Build Status](https://travis-ci.com/AznStevy/bme590hrm.svg?branch=szx2%2Fdevelop)](https://travis-ci.com/AznStevy/bme590hrm)
+[![Build Status](https://travis-ci.com/AznStevy/Heart-Rate-Monitor.svg?branch=master)](https://travis-ci.com/AznStevy/Heart-Rate-Monitor)
 
 ## Heart Rate Monitor
 Heart rate monitors have been an essential tool in evaluating the health of a person as well as an integral part of diagnosis for cardiac disorders ranging from arrhythmia to conditions like Wellen's syndrome.
