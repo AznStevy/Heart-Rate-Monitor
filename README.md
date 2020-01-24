@@ -1,7 +1,6 @@
-# bme590hrm
 [![Build Status](https://travis-ci.com/AznStevy/Heart-Rate-Monitor.svg?branch=master)](https://travis-ci.com/AznStevy/Heart-Rate-Monitor)
 
-## Heart Rate Monitor
+# Heart Rate Monitor
 Heart rate monitors have been an essential tool in evaluating the health of a person as well as an integral part of diagnosis for cardiac disorders ranging from arrhythmia to conditions like Wellen's syndrome.
 
 This is code that acts as a heart rate analyzer (rather than a monitor). It can determine heartbeats based on two different algorithms: Thresholding and Wavelet transform + Thresholding. I've found the Wavelet method to work the best. The goal here was for anyone to write their own detection method and be able to use it with the `HeartRateMonitor` class.
